@@ -1,0 +1,35 @@
+[
+  {
+    "id": "TAP-001",
+    "status": "active",
+    "target_url": "https://search.google.com/local/writereview?placeid=ChIJj6J0-8pf0TERxEd0sXSAffw",
+    "business_name": "WARDAH LAUNDRY/DC HNI Hpai",
+    "pin": "1234",
+    "taps": 5,
+    "created_at": "2026-10-30T11:53:51.310Z",
+    "raw_input_url": "https://maps.app.goo.gl/SEXrgdZY4983sJwW6?g_st=ac",
+    "client_phone": "081298765432",
+    "client_email": "",
+    "activated_at": "2026-10-30T12:09:30.271Z"
+  },
+  {
+    "id": "TAP-002",
+    "status": "unassigned",
+    "target_url": "",
+    "business_name": "",
+    "pin": "5678",
+    "taps": 0,
+    "created_at": "2026-10-30T11:53:51.311Z"
+  },
+  {
+    "id": "TAP-DEMO",
+    "status": "active",
+    "target_url": "https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4",
+    "business_name": "Bancroftt Studio (Contoh)",
+    "client_phone": "08123456789",
+    "pin": "0000",
+    "taps": 12,
+    "created_at": "2026-10-30T11:53:51.311Z",
+    "activated_at": "2026-10-30T11:53:51.311Z"
+  }
+]
