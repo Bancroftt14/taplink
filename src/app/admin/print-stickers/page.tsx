@@ -241,26 +241,27 @@ function PrintStickersContent() {
             logoSize
           );
 
-          // 4. Header: Indonesian Text 1:1 with Physical Plaque (Zero Overlap with Logo)
+          // 4. Header: Indonesian Text 1:1 with Physical Plaque (Calibrated Proportional Breathing Spacing)
           ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
 
-          // Line 1: 'Bantu Kami Dengan' (Y = 485, clean 40px gap below logo bottom 445)
+          // Line 1: 'Bantu Kami Dengan' (Center Y = 502, clean 37px gap below 3D logo bottom 445)
           ctx.fillStyle = '#475569';
-          ctx.font = '400 48px "Product Sans", "Google Sans", -apple-system, BlinkMacSystemFont, sans-serif';
-          ctx.fillText('Bantu Kami Dengan', half, 485);
+          ctx.font = '400 44px "Product Sans", "Google Sans", -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText('Bantu Kami Dengan', half, 502);
 
-          // Line 2: 'Google Review' (Bold 700, authentic Google Product Sans, wide & proportional)
+          // Line 2: 'Google Review' (Bold 700, authentic Google Product Sans, Center Y = 594, clean 35px gap below line 1)
           ctx.fillStyle = '#0f172a';
-          ctx.font = '700 104px "Product Sans", "Google Sans", -apple-system, BlinkMacSystemFont, sans-serif';
-          ctx.fillText('Google Review', half, 560);
+          ctx.font = '700 96px "Product Sans", "Google Sans", -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText('Google Review', half, 594);
 
-          // 5 Golden Stars (Enlarged proportionally: starOuterR = 33, solid Google Gold #FFB800 + outline #E5A100, span = 418px)
+          // 5 Golden Stars (Calibrated proportionally: starOuterR = 30, span = 396px, Center Y = 678, clean 38px gap below line 2)
           const starCount = 5;
-          const starOuterR = 33;
-          const starInnerR = 15;
-          const starSpacing = 88;
+          const starOuterR = 30;
+          const starInnerR = 14;
+          const starSpacing = 84;
           const startStarX = half - 2 * starSpacing;
-          const starY = 656; // Calibrated: shifted down 14px for perfect vertical rhythm (38px above, 36.5px below)
+          const starY = 678; // Calibrated: shifted down for perfect vertical rhythm
 
           ctx.fillStyle = '#FFB800';
           ctx.strokeStyle = '#E5A100';
@@ -922,7 +923,7 @@ function PrintStickersContent() {
                         </div>
 
                         {/* Title: 1:1 Indonesian Physical Plaque Typography */}
-                        <div className="text-center mt-10 sm:mt-11 space-y-0.5">
+                        <div className="text-center mt-9 sm:mt-10 space-y-1.5 sm:space-y-2">
                           <div
                             className="text-[12px] sm:text-[13px] font-normal text-slate-600 tracking-normal"
                             style={{ fontFamily: '"Product Sans", "Google Sans", sans-serif' }}
@@ -930,7 +931,7 @@ function PrintStickersContent() {
                             Bantu Kami Dengan
                           </div>
                           <div
-                            className="text-[24px] sm:text-[27px] font-bold text-slate-900 tracking-[-0.01em] leading-tight"
+                            className="text-[23px] sm:text-[25px] font-bold text-slate-900 tracking-[-0.01em] leading-tight"
                             style={{ fontFamily: '"Product Sans", "Google Sans", sans-serif' }}
                           >
                             Google Review
