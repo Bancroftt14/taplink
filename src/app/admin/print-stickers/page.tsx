@@ -405,7 +405,7 @@ function PrintStickersContent() {
     };
   }, [activeCards.length, Object.keys(qrImages).length, template, showCropMarks, highSaturationPrint]);
 
-  // Master Drawer for Full A3+ Sheet (329 x 483 mm @ 300 DPI = 3886 x 5705 px, 8 Cards Grid)
+  // Master Drawer for Full A3+ Sheet (329 x 486 mm @ 300 DPI = 3886 x 5740 px, 8 Cards Grid)
   const drawA3Sheet = async (sheetCards: Card[]): Promise<Blob> => {
     const canvas = hiddenA3CanvasRef.current;
     if (!canvas) throw new Error('A3 Canvas unavailable');
@@ -413,9 +413,9 @@ function PrintStickersContent() {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('No context');
 
-    // Official Super A3 / A3+ dimensions at 300 DPI
+    // Official Super A3 / A3+ dimensions at 300 DPI (329 x 486 mm)
     const sheetW = 3886; // 329 mm
-    const sheetH = 5705; // 483 mm
+    const sheetH = 5740; // 486 mm (calibrated to fit 4 full 120mm rows + equal top/bottom breathing margin)
     canvas.width = sheetW;
     canvas.height = sheetH;
 
@@ -423,34 +423,43 @@ function PrintStickersContent() {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, sheetW, sheetH);
 
-    // Print Header & Technical Production Metadata
-    ctx.fillStyle = '#64748b';
-    ctx.font = '700 36px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(
-      'TAPLINK PRODUCTION PRINT SHEET • FORMAT A3+ (329 x 483 mm) • 300 DPI • 8 STIKER (12 x 12 cm R7mm)',
-      80,
-      75
-    );
+    // Sticker Dimensions (120 mm at 300 DPI = 1417 px)
+    const stickerPx = 1417;
+    const colGap = 80; // 6.8 mm gap between left & right columns
+    const rowGap = 0;  // 0 px seamless single-cut between rows (industry standard for A3+ gang sheets)
 
-    // Color Calibration Swatches (CMYK + RGB standard density check for print shop operator)
+    const totalGridW = stickerPx * 2 + colGap; // 2914 px
+    const totalGridH = stickerPx * 4;          // 5668 px
+
+    // Perfectly Center Grid Horizontally and Vertically
+    const startX = Math.round((sheetW - totalGridW) / 2); // 486 px (ample margin on sides)
+    const startY = Math.round((sheetH - totalGridH) / 2); // 36 px (balanced top & bottom, zero cutoff!)
+
+    // Left Margin Technical Metadata (Rotated 90° so top space is not wasted!)
+    ctx.save();
+    ctx.translate(70, sheetH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '700 26px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(
+      'TAPLINK PRODUCTION PRINT SHEET • FORMAT A3+ (329 x 486 mm) • 300 DPI • 8 STIKER (12 x 12 cm R7mm)',
+      0,
+      0
+    );
+    ctx.restore();
+
+    // Color Calibration Swatches in the Left Margin (CMYK + RGB)
     const swatchColors = ['#00ffff', '#ff00ff', '#ffff00', '#000000', '#1a73e8', '#ea4335', '#22c55e', '#fbbc04'];
-    let swatchX = sheetW - 80 - swatchColors.length * 40;
+    let swatchY = startY + 60;
     for (const c of swatchColors) {
       ctx.fillStyle = c;
-      ctx.fillRect(swatchX, 48, 32, 32);
+      ctx.fillRect(110, swatchY, 28, 28);
       ctx.strokeStyle = '#cbd5e1';
       ctx.lineWidth = 1;
-      ctx.strokeRect(swatchX, 48, 32, 32);
-      swatchX += 40;
+      ctx.strokeRect(110, swatchY, 28, 28);
+      swatchY += 36;
     }
-
-    // Grid layout: 2 Columns x 4 Rows
-    const stickerPx = 1417; // 120 mm
-    const colGap = 160;
-    const startX = Math.round((sheetW - (stickerPx * 2 + colGap)) / 2); // Center horizontally (~446 px)
-    const startY = 130; // Below header
-    const rowGap = 20;
 
     const singleCanvas = hiddenSingleCanvasRef.current || document.createElement('canvas');
 
@@ -463,7 +472,7 @@ function PrintStickersContent() {
       const row = Math.floor(i / 2);
 
       const x = startX + col * (stickerPx + colGap);
-      const y = startY + row * (stickerPx + rowGap);
+      const y = startY + row * stickerPx;
 
       // Render individual sticker
       const cardBlob = await drawCardToCanvas(singleCanvas, card, qrUrl, false);
@@ -473,45 +482,62 @@ function PrintStickersContent() {
       ctx.drawImage(cardBitmap, x, y, stickerPx, stickerPx);
 
       // Draw Crop Marks (Corner L-marks for print cutter)
-      const markLen = 40;
+      const markLen = 35;
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 2.5;
 
-      // Top-Left
-      ctx.beginPath();
-      ctx.moveTo(x - 15, y);
-      ctx.lineTo(x - 15 - markLen, y);
-      ctx.moveTo(x, y - 15);
-      ctx.lineTo(x, y - 15 - markLen);
-      ctx.stroke();
+      // Outer Corner Crop Marks for outer edges
+      if (row === 0) {
+        // Top edge marks
+        ctx.beginPath();
+        ctx.moveTo(x, y - 10);
+        ctx.lineTo(x, y - 10 - markLen);
+        ctx.moveTo(x + stickerPx, y - 10);
+        ctx.lineTo(x + stickerPx, y - 10 - markLen);
+        ctx.stroke();
+      }
 
-      // Top-Right
-      ctx.beginPath();
-      ctx.moveTo(x + stickerPx + 15, y);
-      ctx.lineTo(x + stickerPx + 15 + markLen, y);
-      ctx.moveTo(x + stickerPx, y - 15);
-      ctx.lineTo(x + stickerPx, y - 15 - markLen);
-      ctx.stroke();
+      if (row === 3) {
+        // Bottom edge marks
+        ctx.beginPath();
+        ctx.moveTo(x, y + stickerPx + 10);
+        ctx.lineTo(x, y + stickerPx + 10 + markLen);
+        ctx.moveTo(x + stickerPx, y + stickerPx + 10);
+        ctx.lineTo(x + stickerPx, y + stickerPx + 10 + markLen);
+        ctx.stroke();
+      }
 
-      // Bottom-Left
-      ctx.beginPath();
-      ctx.moveTo(x - 15, y + stickerPx);
-      ctx.lineTo(x - 15 - markLen, y + stickerPx);
-      ctx.moveTo(x, y + stickerPx + 15);
-      ctx.lineTo(x, y + stickerPx + 15 + markLen);
-      ctx.stroke();
+      if (col === 0) {
+        // Left side marks
+        ctx.beginPath();
+        ctx.moveTo(x - 10, y);
+        ctx.lineTo(x - 10 - markLen, y);
+        ctx.moveTo(x - 10, y + stickerPx);
+        ctx.lineTo(x - 10 - markLen, y + stickerPx);
+        ctx.stroke();
+      }
 
-      // Bottom-Right
-      ctx.beginPath();
-      ctx.moveTo(x + stickerPx + 15, y + stickerPx);
-      ctx.lineTo(x + stickerPx + 15 + markLen, y + stickerPx);
-      ctx.moveTo(x + stickerPx, y + stickerPx + 15);
-      ctx.lineTo(x + stickerPx, y + stickerPx + 15 + markLen);
-      ctx.stroke();
+      if (col === 1) {
+        // Right side marks
+        ctx.beginPath();
+        ctx.moveTo(x + stickerPx + 10, y);
+        ctx.lineTo(x + stickerPx + 10 + markLen, y);
+        ctx.moveTo(x + stickerPx + 10, y + stickerPx);
+        ctx.lineTo(x + stickerPx + 10 + markLen, y + stickerPx);
+        ctx.stroke();
+      }
+
+      // Center Column Gap Cut Guideline (between col 0 and col 1)
+      if (col === 0) {
+        ctx.beginPath();
+        ctx.moveTo(x + stickerPx + colGap / 2, y);
+        ctx.lineTo(x + stickerPx + colGap / 2, y + markLen);
+        ctx.stroke();
+      }
 
       // Subtle Outer Radius Trim Guideline (R7mm = 82px)
       ctx.save();
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([8, 6]);
       ctx.beginPath();
@@ -519,15 +545,27 @@ function PrintStickersContent() {
       ctx.stroke();
       ctx.restore();
 
-      // Card Metadata Label outside sticker
+      // Card Metadata Label in Margin (Never collides with sticker!)
       ctx.fillStyle = '#64748b';
-      ctx.font = '700 24px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(
-        `${card.id} • ${card.business_name || 'Unassigned'} • 12x12 cm`,
-        x + stickerPx / 2,
-        y + stickerPx + 18
-      );
+      ctx.font = '700 22px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+      if (col === 0) {
+        // Draw in left margin (right aligned)
+        ctx.textAlign = 'right';
+        ctx.fillText(
+          `${card.id} • ${card.business_name || 'Belum Ditautkan'}`,
+          startX - 25,
+          y + stickerPx / 2 + 8
+        );
+      } else {
+        // Draw in right margin (left aligned)
+        ctx.textAlign = 'left';
+        ctx.fillText(
+          `${card.id} • ${card.business_name || 'Belum Ditautkan'}`,
+          startX + totalGridW + 25,
+          y + stickerPx / 2 + 8
+        );
+      }
     }
 
     return new Promise((resolve, reject) => {
