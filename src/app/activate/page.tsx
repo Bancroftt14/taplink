@@ -11,6 +11,10 @@ import {
   RefreshCw,
   ArrowRight,
   Share2,
+  MapPin,
+  ClipboardPaste,
+  ShieldCheck,
+  Star,
 } from 'lucide-react';
 
 function ActivateContent() {
@@ -26,13 +30,24 @@ function ActivateContent() {
   const [isActivated, setIsActivated] = useState(false);
   const [businessName, setBusinessName] = useState('');
   const [finalCardUrl, setFinalCardUrl] = useState('');
+  const [copyFeedback, setCopyFeedback] = useState(false);
 
-  // If initial ID exists, set it
   useEffect(() => {
     if (initialId) {
       setCardId(initialId);
     }
   }, [initialId]);
+
+  const handlePasteClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setGoogleUrl(text.trim());
+      }
+    } catch {
+      // Browser permissions fallback
+    }
+  };
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +59,7 @@ function ActivateContent() {
     }
 
     if (!googleUrl.trim()) {
-      setErrorMessage('Silakan tempel link usaha Anda dari Google Maps.');
+      setErrorMessage('Silakan tempel link Google Maps toko atau usaha Anda.');
       return;
     }
 
@@ -69,59 +84,231 @@ function ActivateContent() {
         setFinalCardUrl(`${origin}/c/${cardId.trim().toUpperCase()}`);
       }
     } catch {
-      setErrorMessage('Koneksi terganggu. Silakan coba lagi.');
+      setErrorMessage('Koneksi terganggu. Silakan periksa jaringan dan coba lagi.');
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleCopyLink = () => {
+    if (!finalCardUrl) return;
+    navigator.clipboard.writeText(finalCardUrl);
+    setCopyFeedback(true);
+    setTimeout(() => setCopyFeedback(false), 2500);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-4 sm:p-6 font-sans">
-      <div className="max-w-md w-full mx-auto my-auto py-8">
-        {/* Simple Brand Header */}
-        <div className="text-center mb-6 space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Aktivasi Kartu</span>
+    <div className="relative min-h-screen bg-[#05070f] text-slate-100 flex flex-col justify-between overflow-hidden">
+      {/* Subtle Apple Ambient Glow Field */}
+      <div className="absolute inset-0 apple-glow-mesh pointer-events-none" />
+      <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[550px] h-[300px] bg-blue-600/15 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute -bottom-32 right-1/4 w-[450px] h-[300px] bg-emerald-600/10 blur-[140px] rounded-full pointer-events-none" />
+
+      {/* Top Header / Brand Nav */}
+      <header className="relative z-10 w-full max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/20">
+            <Sparkles className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Hubungkan ke Google Maps
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Tempel link usaha Anda di bawah. Kartu langsung otomatis aktif.
-          </p>
+          <span className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
+            TapLink <span className="text-[10px] font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded-full">Pro</span>
+          </span>
         </div>
 
-        {/* Success Screen */}
-        {isActivated ? (
-          <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl p-6 sm:p-7 shadow-2xl text-center space-y-5 animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 bg-emerald-500/20 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-emerald-400">
-              <CheckCircle2 className="w-8 h-8" />
-            </div>
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <span className="hidden sm:inline">Aktivasi Aman & Resmi</span>
+        </div>
+      </header>
 
-            <div className="space-y-1.5">
-              <h2 className="text-lg font-bold text-white">Kartu Berhasil Aktif! 🎉</h2>
-              <p className="text-xs text-slate-300">
-                Terhubung ke: <span className="font-semibold text-emerald-400">{businessName}</span>
+      {/* Main Activation Stage */}
+      <main className="relative z-10 w-full max-w-md mx-auto px-4 py-4 sm:py-8 my-auto">
+        {!isActivated ? (
+          <div className="space-y-6">
+            {/* Header Text */}
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full apple-glass text-blue-300 text-[11px] font-medium tracking-wide">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                <span>Kartu NFC & QR Review</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+                Hubungkan Kartu Anda
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-400 max-w-xs mx-auto leading-relaxed">
+                Tempelkan link Google Maps usaha Anda. Kartu akan langsung aktif dan siap digunakan.
               </p>
             </div>
 
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-left space-y-1">
+            {/* Apple Floating Card Miniature Preview */}
+            <div className="relative mx-auto w-52 sm:w-56 aspect-square apple-glass rounded-[28px] p-4 flex flex-col justify-between items-center shadow-2xl border border-white/15 overflow-hidden group">
+              {/* Specular sheen line */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.04] to-transparent pointer-events-none" />
+
+              {/* Card Header */}
+              <div className="w-full flex items-center justify-between text-[10px] text-slate-400">
+                <span className="font-mono font-bold tracking-wider text-blue-400">
+                  {cardId || 'TAP-001'}
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 font-semibold text-[9px] flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                  Siap Aktif
+                </span>
+              </div>
+
+              {/* Miniature Center Google Branding */}
+              <div className="flex flex-col items-center text-center space-y-1.5 my-auto">
+                <div className="w-12 h-12 rounded-full p-1 bg-white/10 backdrop-blur-md border border-white/20 shadow-md flex items-center justify-center">
+                  <img
+                    src="/google-logo-glossy.webp"
+                    alt="Google"
+                    className="w-10 h-10 object-contain drop-shadow"
+                  />
+                </div>
+                <div className="space-y-0.5">
+                  <div className="text-[9px] text-slate-300 font-normal">Bantu Kami Dengan</div>
+                  <div className="text-xs font-bold text-white tracking-tight">Google Review</div>
+                </div>
+                <div className="flex items-center gap-0.5 text-amber-400 pt-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom Dock hint */}
+              <div className="w-full pt-2 border-t border-white/10 flex items-center justify-around text-[9px] text-slate-400 font-medium">
+                <span>NFC Tap</span>
+                <span className="text-slate-600">•</span>
+                <span>Scan QR</span>
+              </div>
+            </div>
+
+            {/* Apple Frosted Card Form */}
+            <div className="apple-glass-card rounded-[28px] p-6 sm:p-7 shadow-2xl space-y-5">
+              <form onSubmit={handleActivate} className="space-y-4">
+                {/* ID Kartu Input (If not auto-detected from URL) */}
+                {!initialId && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                      <span>ID Kartu</span>
+                      <span className="text-[10px] text-slate-500">Tertera di stiker</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={cardId}
+                      onChange={(e) => setCardId(e.target.value.toUpperCase())}
+                      placeholder="Contoh: TAP-001"
+                      className="w-full apple-glass-input rounded-2xl px-4 py-2.5 text-xs font-mono uppercase text-white outline-none transition"
+                      required
+                    />
+                  </div>
+                )}
+
+                {/* Primary Google Maps Input */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Link Google Maps Usaha Anda</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handlePasteClipboard}
+                      className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 transition"
+                    >
+                      <ClipboardPaste className="w-3 h-3" />
+                      <span>Tempel</span>
+                    </button>
+                  </label>
+
+                  <div className="relative">
+                    <input
+                      type="url"
+                      value={googleUrl}
+                      onChange={(e) => setGoogleUrl(e.target.value)}
+                      placeholder="https://maps.app.goo.gl/..."
+                      className="w-full apple-glass-input rounded-2xl px-4 py-3.5 pr-10 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition"
+                      required
+                      autoFocus
+                    />
+                    <LinkIcon className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 leading-relaxed pt-0.5">
+                    💡 <strong>Cara cepat:</strong> Buka Google Maps di HP ➔ cari nama usaha Anda ➔ klik <strong>Bagikan</strong> ➔ <strong>Salin Link</strong> ➔ Tempel di sini.
+                  </p>
+                </div>
+
+                {/* Error Banner */}
+                {errorMessage && (
+                  <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span className="leading-tight">{errorMessage}</span>
+                  </div>
+                )}
+
+                {/* Apple Primary CTA Button */}
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full relative overflow-hidden py-3.5 px-4 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-semibold text-xs sm:text-sm shadow-xl shadow-blue-600/30 border border-white/20 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menghubungkan ke Google Maps...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Aktifkan Kartu Sekarang</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          </div>
+        ) : (
+          /* Apple-Style Success Celebration Screen */
+          <div className="apple-glass-card rounded-[32px] p-6 sm:p-8 text-center space-y-6 shadow-2xl border border-emerald-500/30 animate-in fade-in zoom-in-95 duration-300">
+            {/* Emerald Glowing Icon */}
+            <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 shadow-xl shadow-emerald-500/20">
+              <CheckCircle2 className="w-9 h-9" />
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold text-[10px] uppercase tracking-wider">
+                Berhasil Diaktifkan
+              </span>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+                Kartu Siap Digunakan! 🎉
+              </h2>
+              <p className="text-xs text-slate-300">
+                Terhubung langsung ke:{' '}
+                <strong className="text-emerald-400 font-bold block text-sm mt-0.5">
+                  {businessName}
+                </strong>
+              </p>
+            </div>
+
+            {/* TapLink Card Details */}
+            <div className="apple-glass rounded-2xl p-4 text-left space-y-1.5 border border-white/10">
               <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span>URL Kartu NFC:</span>
+                <span>URL Kartu Pintar:</span>
                 <span className="font-mono text-blue-400 font-bold">{cardId}</span>
               </div>
-              <div className="font-mono text-xs text-blue-300 break-all select-all">
+              <div className="font-mono text-xs text-slate-200 break-all select-all bg-black/30 p-2.5 rounded-xl border border-white/5">
                 {finalCardUrl}
               </div>
             </div>
 
-            <div className="space-y-2.5 pt-1">
+            {/* Action Buttons */}
+            <div className="space-y-2.5">
               <a
                 href={finalCardUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-lg shadow-blue-500/20 transition active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-semibold text-xs shadow-lg shadow-blue-500/25 border border-white/20 transition active:scale-[0.98]"
               >
                 <span>Uji Coba Tap Sekarang</span>
                 <ExternalLink className="w-4 h-4" />
@@ -129,100 +316,25 @@ function ActivateContent() {
 
               <button
                 type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(finalCardUrl);
-                  alert('Link kartu berhasil disalin!');
-                }}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
+                onClick={handleCopyLink}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl apple-glass hover:bg-white/10 text-slate-200 text-xs font-medium border border-white/10 transition active:scale-[0.98]"
               >
-                <Share2 className="w-3.5 h-3.5" />
-                <span>Salin Link Kartu</span>
+                <Share2 className="w-3.5 h-3.5 text-blue-400" />
+                <span>{copyFeedback ? 'Link Berhasil Disalin! ✓' : 'Salin Link Kartu'}</span>
               </button>
             </div>
 
-            <p className="text-[11px] text-slate-500 pt-1">
-              Setiap kali kartu ini di-tap, pop-up ulasan bintang 5 Google Anda akan langsung terbuka otomatis.
+            <p className="text-[11px] text-slate-400 leading-relaxed pt-1">
+              Setiap kali kartu ini di-tap atau QR di-scan, pelanggan akan langsung dibawa ke formulir ulasan bintang 5 Google Anda dalam &lt; 1 detik.
             </p>
           </div>
-        ) : (
-          /* Single-Step Activation Form */
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-7 shadow-xl">
-            <form onSubmit={handleActivate} className="space-y-4">
-              {/* ID Kartu (Minimal Badge or Input) */}
-              {initialId ? (
-                <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs">
-                  <span className="text-slate-400">ID Kartu:</span>
-                  <span className="font-mono font-bold text-blue-400">{cardId}</span>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    ID Kartu
-                  </label>
-                  <input
-                    type="text"
-                    value={cardId}
-                    onChange={(e) => setCardId(e.target.value.toUpperCase())}
-                    placeholder="Contoh: TAP-001"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl px-4 py-2.5 text-xs text-white uppercase font-mono outline-none transition"
-                    required
-                  />
-                </div>
-              )}
-
-              {/* The Only Input Needed: Google Link */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center gap-1.5">
-                  <LinkIcon className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Link Google Maps Usaha Anda</span>
-                </label>
-                <input
-                  type="url"
-                  value={googleUrl}
-                  onChange={(e) => setGoogleUrl(e.target.value)}
-                  placeholder="Tempel link di sini (https://maps.app.goo.gl/...)"
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition font-sans"
-                  required
-                />
-                <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
-                  💡 <strong>Cara ambil link:</strong> Buka Google Maps di HP ➔ cari nama toko/usaha Anda ➔ klik tombol <strong>&quot;Bagikan&quot;</strong> atau <strong>&quot;Minta Ulasan&quot;</strong> ➔ Salin link lalu tempel di sini.
-                </p>
-              </div>
-
-              {/* Error Alert */}
-              {errorMessage && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{errorMessage}</span>
-                </div>
-              )}
-
-              {/* Big Activation Button */}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-600/20 transition active:scale-[0.98] disabled:opacity-50"
-              >
-                {submitting ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Menghubungkan ke Google Review...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Aktifkan Kartu Sekarang</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
         )}
+      </main>
 
-        <div className="mt-8 text-center text-xs text-slate-500">
-          TapLink • bancrovtt.web.id
-        </div>
-      </div>
+      {/* Footer */}
+      <footer className="relative z-10 py-6 text-center text-xs text-slate-500">
+        TapLink by Bancroftt • Google Review Card System
+      </footer>
     </div>
   );
 }
@@ -231,8 +343,9 @@ export default function ActivatePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-950 text-slate-400 flex items-center justify-center text-xs">
-          Memuat halaman aktivasi...
+        <div className="min-h-screen bg-[#05070f] text-slate-400 flex items-center justify-center text-xs gap-2">
+          <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+          <span>Memuat halaman aktivasi...</span>
         </div>
       }
     >

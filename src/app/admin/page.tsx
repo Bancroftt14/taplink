@@ -18,6 +18,12 @@ import {
   CheckCircle,
   Clock,
   Printer,
+  Sparkles,
+  Layers,
+  Edit2,
+  Trash2,
+  Link as LinkIcon,
+  X,
 } from 'lucide-react';
 import { Card } from '@/types/card';
 
@@ -32,8 +38,9 @@ export default function AdminPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'unassigned'>('all');
 
   // Generator state
+  const [showGenerator, setShowGenerator] = useState(false);
   const [prefix, setPrefix] = useState('TAP');
-  const [batchCount, setBatchCount] = useState(20);
+  const [batchCount, setBatchCount] = useState(8);
   const [defaultPin, setDefaultPin] = useState('');
   const [generating, setGenerating] = useState(false);
 
@@ -43,8 +50,21 @@ export default function AdminPage() {
   const [editName, setEditName] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
-  // Copy feedback
+  // Multi-select for A3+ print
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Check URL query param for key on load
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlKey = urlParams.get('key');
+      if (urlKey) {
+        setAdminKey(urlKey);
+        fetchCards(urlKey);
+      }
+    }
+  }, []);
 
   const fetchCards = async (key: string) => {
     setLoading(true);
@@ -53,7 +73,7 @@ export default function AdminPage() {
       const res = await fetch(`/api/admin/cards?key=${encodeURIComponent(key)}`);
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Autentikasi gagal. Masukkan kunci yang benar.');
+        setError(data.error || 'Autentikasi gagal. Periksa kembali kunci admin Anda.');
         setIsAuthenticated(false);
       } else {
         setCards(data.cards || []);
@@ -93,6 +113,7 @@ export default function AdminPage() {
         alert(data.error || 'Gagal generate kartu.');
       } else {
         alert(`Berhasil generate ${data.insertedCount} kartu baru!`);
+        setShowGenerator(false);
         fetchCards(adminKey);
       }
     } catch {
@@ -157,6 +178,21 @@ export default function AdminPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  // Multi-select toggle
+  const toggleSelectCard = (id: string) => {
+    setSelectedCardIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const selectAllFiltered = () => {
+    if (selectedCardIds.length === filteredCards.length) {
+      setSelectedCardIds([]);
+    } else {
+      setSelectedCardIds(filteredCards.map((c) => c.id));
+    }
+  };
+
   const exportCSV = () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://taplink.bancrovtt.web.id';
     const rows = [
@@ -200,14 +236,15 @@ export default function AdminPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans">
-        <div className="max-w-sm w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
+      <div className="relative min-h-screen bg-[#05070f] text-slate-100 flex items-center justify-center p-4 font-sans overflow-hidden">
+        <div className="absolute inset-0 apple-glow-mesh pointer-events-none" />
+        <div className="max-w-sm w-full apple-glass-card rounded-[32px] p-6 sm:p-8 space-y-6 shadow-2xl border border-white/10 relative z-10 animate-in fade-in zoom-in-95 duration-300">
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mx-auto text-blue-400">
+            <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-500 border border-white/20 rounded-2xl flex items-center justify-center mx-auto text-white shadow-xl shadow-blue-500/20">
               <KeyRound className="w-7 h-7" />
             </div>
-            <h1 className="text-xl font-bold text-white">TapLink Admin Portal</h1>
-            <p className="text-xs text-slate-400">Masukkan kunci admin untuk mengelola kartu NFC</p>
+            <h1 className="text-xl font-extrabold text-white">TapLink Admin Hub</h1>
+            <p className="text-xs text-slate-400">Masukkan kunci pengaman admin untuk mengelola kartu NFC</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -216,21 +253,25 @@ export default function AdminPage() {
                 type="password"
                 value={adminKey}
                 onChange={(e) => setAdminKey(e.target.value)}
-                placeholder="Masukkan Admin Secret"
-                className="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition"
+                placeholder="Admin Secret Key"
+                className="w-full apple-glass-input rounded-2xl px-4 py-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition"
                 required
               />
-              <p className="text-[11px] text-slate-500 mt-1">Default: bancroftt2026 (dapat diubah via .env)</p>
+              <p className="text-[11px] text-slate-500 mt-1.5">Kunci Default: bancroftt2026</p>
             </div>
 
-            {error && <p className="text-xs text-rose-400">{error}</p>}
+            {error && (
+              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-xl">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm transition shadow-lg shadow-blue-500/20 disabled:opacity-50"
+              className="w-full py-3 px-4 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-semibold text-xs sm:text-sm transition shadow-lg shadow-blue-500/25 border border-white/20 disabled:opacity-50 active:scale-95"
             >
-              {loading ? 'Memeriksa Kunci...' : 'Masuk ke Dashboard'}
+              {loading ? 'Memeriksa Kunci...' : 'Masuk ke Control Center'}
             </button>
           </form>
         </div>
@@ -239,266 +280,385 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-4 sm:p-6 md:p-8">
-      <div className="max-w-6xl w-full mx-auto space-y-8">
-        {/* Top Navbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <h1 className="text-xl sm:text-2xl font-bold text-white">TapLink Manager</h1>
+    <div className="relative min-h-screen bg-[#05070f] text-slate-100 font-sans pb-24 overflow-x-hidden">
+      <div className="absolute inset-0 apple-glow-mesh pointer-events-none" />
+
+      {/* Apple-Style Glass Top Navigation */}
+      <header className="sticky top-0 z-40 apple-glass-card border-b border-white/10 backdrop-blur-2xl px-4 sm:px-8 py-4 shadow-xl">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/25 border border-white/20">
+              <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">Kelola kartu Google Tap Review bancrovtt.web.id</p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base sm:text-lg font-extrabold text-white tracking-tight">
+                  TapLink Control Center
+                </h1>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Sistem Manajemen Kartu NFC & Ulasan Google Bintang 5
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={() => fetchCards(adminKey)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition"
+              className="p-2.5 rounded-xl apple-glass hover:bg-white/10 text-slate-300 transition active:scale-95"
+              title="Refresh Data"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>Muat Ulang</span>
             </button>
 
             <button
-              onClick={() => window.open(`/admin/print-stickers?key=${encodeURIComponent(adminKey)}`, '_blank')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white transition shadow-lg shadow-blue-600/20"
+              onClick={() => setShowGenerator(!showGenerator)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl apple-glass hover:bg-white/10 text-xs font-semibold text-slate-200 border border-white/10 transition active:scale-95"
+            >
+              <PlusCircle className="w-3.5 h-3.5 text-blue-400" />
+              <span>{showGenerator ? 'Tutup Generator' : '+ Kartu Baru'}</span>
+            </button>
+
+            <button
+              onClick={() =>
+                window.open(
+                  `/admin/print-stickers?key=${encodeURIComponent(adminKey)}`,
+                  '_blank'
+                )
+              }
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-xl shadow-blue-600/30 border border-white/20 transition active:scale-95"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Cetak / Unduh Stiker QR</span>
+              <span>Studio Cetak A3+ & Stiker</span>
             </button>
 
             <button
               onClick={exportCSV}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl apple-glass hover:bg-white/10 text-xs font-semibold text-slate-300 border border-white/10 transition active:scale-95"
+              title="Ekspor CSV untuk NFC writer tools"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Ekspor CSV (NFC/QR)</span>
+              <span className="hidden sm:inline">CSV</span>
             </button>
           </div>
         </div>
+      </header>
 
-        {/* Analytics Counter */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
-              <span>Total Kartu Dicetak</span>
-              <CreditCard className="w-4 h-4 text-blue-400" />
+      <main className="max-w-7xl mx-auto px-4 sm:px-8 pt-8 space-y-8 relative z-10">
+        {/* Apple 4-Metric Glass Tiles */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {/* Total Kartu */}
+          <div className="apple-glass-card rounded-[28px] p-5 sm:p-6 space-y-2 border border-white/10 hover:border-blue-500/30 transition">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span className="font-medium">Total Kartu</span>
+              <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                <CreditCard className="w-4 h-4" />
+              </div>
             </div>
-            <div className="text-2xl font-extrabold text-white">{cards.length}</div>
-            <p className="text-[11px] text-slate-500">Total persediaan kartu sistem</p>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              {cards.length}
+            </div>
+            <p className="text-[11px] text-slate-500">Persediaan terdaftar di sistem</p>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
-              <span>Kartu Aktif (Klien)</span>
-              <CheckCircle className="w-4 h-4 text-emerald-400" />
+          {/* Kartu Aktif */}
+          <div className="apple-glass-card rounded-[28px] p-5 sm:p-6 space-y-2 border border-white/10 hover:border-emerald-500/30 transition">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span className="font-medium">Kartu Aktif (Klien)</span>
+              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <CheckCircle className="w-4 h-4" />
+              </div>
             </div>
-            <div className="text-2xl font-extrabold text-emerald-400">{activeCount}</div>
-            <p className="text-[11px] text-slate-500">{unassignedCount} kartu belum diaktifkan pembeli</p>
+            <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">
+              {activeCount}
+            </div>
+            <p className="text-[11px] text-slate-500">Sudah ditautkan ke Google Review</p>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-1">
-            <div className="flex items-center justify-between text-slate-400 text-xs">
-              <span>Total Tap Pelanggan</span>
-              <BarChart3 className="w-4 h-4 text-amber-400" />
+          {/* Belum Aktif */}
+          <div className="apple-glass-card rounded-[28px] p-5 sm:p-6 space-y-2 border border-white/10 hover:border-amber-500/30 transition">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span className="font-medium">Belum Diaktivasi</span>
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <Clock className="w-4 h-4" />
+              </div>
             </div>
-            <div className="text-2xl font-extrabold text-amber-400">{totalTaps}</div>
-            <p className="text-[11px] text-slate-500">Akumulasi kunjungan review semua klien</p>
+            <div className="text-2xl sm:text-3xl font-extrabold text-amber-400 tracking-tight">
+              {unassignedCount}
+            </div>
+            <p className="text-[11px] text-slate-500">Siap dikirim atau diprogram</p>
+          </div>
+
+          {/* Total Taps */}
+          <div className="apple-glass-card rounded-[28px] p-5 sm:p-6 space-y-2 border border-white/10 hover:border-indigo-500/30 transition">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span className="font-medium">Total Tap Pengunjung</span>
+              <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <BarChart3 className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              {totalTaps}
+            </div>
+            <p className="text-[11px] text-slate-500">Akumulasi kunjungan review semua toko</p>
           </div>
         </div>
 
-        {/* Batch Generator Section */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <PlusCircle className="w-5 h-5 text-blue-400" />
-            <h2 className="font-bold text-white text-base">Cetak Batch Kartu Baru</h2>
-          </div>
-          <p className="text-xs text-slate-400">
-            Generate seri ID kartu sekaligus untuk di-write ke chip NFC atau dicetak ke stiker QR code kartu.
-          </p>
-
-          <form onSubmit={handleBatchGenerate} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-400 mb-1">Prefix ID</label>
-              <input
-                type="text"
-                value={prefix}
-                onChange={(e) => setPrefix(e.target.value.toUpperCase())}
-                placeholder="TAP"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white uppercase outline-none focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-400 mb-1">Jumlah Kartu</label>
-              <input
-                type="number"
-                min={1}
-                max={500}
-                value={batchCount}
-                onChange={(e) => setBatchCount(Number(e.target.value))}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-400 mb-1">PIN Default (Opsional)</label>
-              <input
-                type="text"
-                value={defaultPin}
-                onChange={(e) => setDefaultPin(e.target.value)}
-                placeholder="Kosongkan jika tanpa PIN"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
-              />
-            </div>
-            <div className="flex items-end">
+        {/* Batch Generator Drawer */}
+        {showGenerator && (
+          <div className="apple-glass-card rounded-[32px] p-6 sm:p-8 border border-blue-500/30 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <PlusCircle className="w-5 h-5 text-blue-400" />
+                <h2 className="font-bold text-white text-base">Generate Seri Kartu Baru</h2>
+              </div>
               <button
-                type="submit"
-                disabled={generating}
-                className="w-full py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition disabled:opacity-50"
+                onClick={() => setShowGenerator(false)}
+                className="p-1 rounded-xl hover:bg-white/10 text-slate-400"
               >
-                {generating ? 'Membuat...' : '⚡ Generate Kartu'}
+                <X className="w-4 h-4" />
               </button>
             </div>
-          </form>
-        </div>
+            <p className="text-xs text-slate-400">
+              Buat seri kartu sekaligus. Format 8 kartu sangat pas untuk 1 lembar cetak A3+!
+            </p>
 
-        {/* Cards Table Section */}
-        <div className="bg-slate-900/70 border border-slate-800 rounded-2xl overflow-hidden space-y-4 p-5">
-          {/* Filter & Search Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+            <form onSubmit={handleBatchGenerate} className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2">
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400">Prefix ID</label>
+                <input
+                  type="text"
+                  value={prefix}
+                  onChange={(e) => setPrefix(e.target.value.toUpperCase())}
+                  placeholder="TAP"
+                  className="w-full apple-glass-input rounded-2xl px-4 py-2.5 text-xs text-white uppercase font-mono outline-none"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400">Jumlah Kartu</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={batchCount}
+                  onChange={(e) => setBatchCount(Number(e.target.value))}
+                  className="w-full apple-glass-input rounded-2xl px-4 py-2.5 text-xs text-white outline-none"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400">PIN (Opsional)</label>
+                <input
+                  type="text"
+                  value={defaultPin}
+                  onChange={(e) => setDefaultPin(e.target.value)}
+                  placeholder="Kosongkan jika tanpa PIN"
+                  className="w-full apple-glass-input rounded-2xl px-4 py-2.5 text-xs text-white outline-none"
+                />
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  disabled={generating}
+                  className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-blue-600/30 disabled:opacity-50 active:scale-95"
+                >
+                  {generating ? 'Membuat...' : '⚡ Generate Kartu'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Cards Table Card */}
+        <div className="apple-glass-card rounded-[32px] p-6 sm:p-8 border border-white/10 shadow-2xl space-y-6">
+          {/* Table Header Filter & Search */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari ID, Toko, No HP..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500 transition"
+                placeholder="Cari ID, Nama Toko, WhatsApp..."
+                className="w-full apple-glass-input rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none transition"
               />
             </div>
 
-            <div className="flex items-center gap-2 self-end sm:self-auto">
+            {/* Status Filter Pills */}
+            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/40 border border-white/10 self-stretch sm:self-auto justify-center">
               <button
                 onClick={() => setFilterStatus('all')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                  filterStatus === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                  filterStatus === 'all'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 Semua ({cards.length})
               </button>
               <button
                 onClick={() => setFilterStatus('active')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                  filterStatus === 'active' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                  filterStatus === 'active'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 Aktif ({activeCount})
               </button>
               <button
                 onClick={() => setFilterStatus('unassigned')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                  filterStatus === 'unassigned' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                  filterStatus === 'unassigned'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Belum Aktif ({unassignedCount})
+                Belum ({unassignedCount})
               </button>
             </div>
           </div>
 
-          {/* Table */}
+          {/* Cards List Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-950/70 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
-                <tr>
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-white/10 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-3">
+                    <input
+                      type="checkbox"
+                      checked={
+                        filteredCards.length > 0 &&
+                        selectedCardIds.length === filteredCards.length
+                      }
+                      onChange={selectAllFiltered}
+                      className="rounded bg-slate-900 border-slate-700 text-blue-600"
+                    />
+                  </th>
                   <th className="py-3 px-3">ID Kartu</th>
                   <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3">Nama Usaha Klien</th>
-                  <th className="py-3 px-3">Tap URL</th>
+                  <th className="py-3 px-3">Nama Usaha / Klien</th>
                   <th className="py-3 px-3 text-center">Taps</th>
+                  <th className="py-3 px-3">Target URL Google</th>
                   <th className="py-3 px-3 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-sans">
+              <tbody className="divide-y divide-white/5">
                 {filteredCards.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-500">
+                    <td colSpan={7} className="py-12 text-center text-slate-500">
                       Tidak ada kartu yang cocok dengan pencarian.
                     </td>
                   </tr>
                 ) : (
-                  filteredCards.map((c) => {
-                    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-                    const tapUrl = `${origin}/c/${c.id}`;
+                  filteredCards.map((card) => {
+                    const origin =
+                      typeof window !== 'undefined' ? window.location.origin : '';
+                    const tapUrl = `${origin}/c/${card.id}`;
+                    const isSelected = selectedCardIds.includes(card.id);
 
                     return (
-                      <tr key={c.id} className="hover:bg-slate-800/30 transition">
-                        <td className="py-3 px-3 font-mono font-bold text-white whitespace-nowrap">
-                          {c.id}
+                      <tr
+                        key={card.id}
+                        className={`hover:bg-white/[0.03] transition ${
+                          isSelected ? 'bg-blue-600/10' : ''
+                        }`}
+                      >
+                        <td className="py-3.5 px-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectCard(card.id)}
+                            className="rounded bg-slate-900 border-slate-700 text-blue-600"
+                          />
                         </td>
-                        <td className="py-3 px-3 whitespace-nowrap">
-                          {c.status === 'active' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-medium">
-                              <CheckCircle className="w-3 h-3" />
-                              <span>Aktif</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px] font-medium">
-                              <Clock className="w-3 h-3" />
-                              <span>Belum Aktif</span>
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 max-w-[180px] truncate">
-                          {c.business_name ? (
-                            <div>
-                              <div className="font-medium text-white truncate">{c.business_name}</div>
-                              {c.client_phone && (
-                                <div className="text-[10px] text-slate-400">{c.client_phone}</div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-slate-500 italic">Belum diklaim</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3">
-                          <button
-                            onClick={() => copyToClipboard(tapUrl, c.id)}
-                            className="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 font-mono bg-slate-950 px-2 py-1 rounded border border-slate-800"
-                            title="Klik untuk salin URL NFC"
-                          >
-                            <span>/c/{c.id}</span>
-                            {copiedId === c.id ? (
-                              <Check className="w-3 h-3 text-emerald-400" />
-                            ) : (
-                              <Copy className="w-3 h-3 text-slate-500" />
-                            )}
-                          </button>
-                        </td>
-                        <td className="py-3 px-3 text-center font-mono font-bold text-white">
-                          {c.taps || 0}
-                        </td>
-                        <td className="py-3 px-3 text-right whitespace-nowrap space-x-2">
-                          <button
-                            onClick={() => {
-                              setEditingCard(c);
-                              setEditName(c.business_name || '');
-                              setEditUrl(c.target_url || '');
-                            }}
-                            className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition"
-                          >
-                            Edit
-                          </button>
-                          {c.status === 'active' && (
+
+                        <td className="py-3.5 px-3 font-mono font-bold text-white">
+                          <div className="flex items-center gap-2">
+                            <span>{card.id}</span>
                             <button
-                              onClick={() => handleResetCard(c.id)}
-                              className="text-xs text-rose-400 hover:text-rose-300 px-2 py-1 rounded bg-rose-500/10 hover:bg-rose-500/20 transition"
-                              title="Reset kartu kembali ke status belum aktif"
+                              onClick={() => copyToClipboard(tapUrl, card.id)}
+                              className="text-slate-500 hover:text-blue-400 transition"
+                              title="Salin Tap Link NFC"
                             >
-                              Reset
+                              {copiedId === card.id ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
                             </button>
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-3">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                              card.status === 'active'
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                                : 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+                            }`}
+                          >
+                            {card.status === 'active' ? 'Aktif' : 'Belum Ditautkan'}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 px-3 font-medium text-white max-w-[200px] truncate">
+                          {card.business_name || (
+                            <span className="text-slate-500 italic">Belum diisi klien</span>
                           )}
+                        </td>
+
+                        <td className="py-3.5 px-3 text-center">
+                          <span className="font-bold text-slate-200 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+                            {card.taps || 0}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 px-3 max-w-[240px] truncate text-slate-400">
+                          {card.target_url ? (
+                            <a
+                              href={card.target_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-400 hover:underline flex items-center gap-1"
+                            >
+                              <span className="truncate">{card.target_url}</span>
+                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                            </a>
+                          ) : (
+                            <span className="text-slate-600">-</span>
+                          )}
+                        </td>
+
+                        <td className="py-3.5 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => {
+                                setEditingCard(card);
+                                setEditName(card.business_name || '');
+                                setEditUrl(card.target_url || '');
+                              }}
+                              className="p-1.5 rounded-lg apple-glass hover:bg-white/10 text-slate-300"
+                              title="Edit Data"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {card.status === 'active' && (
+                              <button
+                                onClick={() => handleResetCard(card.id)}
+                                className="p-1.5 rounded-lg apple-glass hover:bg-rose-500/20 text-rose-400"
+                                title="Reset Kartu"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -508,43 +668,103 @@ export default function AdminPage() {
             </table>
           </div>
         </div>
-      </div>
+      </main>
+
+      {/* Floating Action Dock when Cards Selected */}
+      {selectedCardIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 apple-glass-card rounded-2xl px-6 py-3 border border-blue-500/40 shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <span className="text-xs font-semibold text-white">
+            <strong className="text-blue-400">{selectedCardIds.length}</strong> kartu dipilih
+          </span>
+
+          <div className="h-4 w-px bg-white/20" />
+
+          <button
+            onClick={() =>
+              window.open(
+                `/admin/print-stickers?key=${encodeURIComponent(adminKey)}`,
+                '_blank'
+              )
+            }
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition active:scale-95 shadow-md shadow-blue-600/30"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            <span>Cetak Lembar A3+ (8 Kartu)</span>
+          </button>
+
+          <button
+            onClick={() => {
+              const links = selectedCardIds
+                .map((id) => `${window.location.origin}/c/${id}`)
+                .join('\n');
+              navigator.clipboard.writeText(links);
+              alert(`${selectedCardIds.length} Tap Link berhasil disalin!`);
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl apple-glass hover:bg-white/10 text-xs font-medium text-slate-300 transition"
+          >
+            <Copy className="w-3.5 h-3.5" />
+            <span>Salin Link</span>
+          </button>
+
+          <button
+            onClick={() => setSelectedCardIds([])}
+            className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400"
+            title="Batal pilih"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingCard && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <h3 className="font-bold text-white text-base">
-              Edit Data Kartu: <span className="font-mono text-blue-400">{editingCard.id}</span>
-            </h3>
-
-            <div className="space-y-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="apple-glass-card rounded-[32px] max-w-md w-full p-6 sm:p-8 border border-white/20 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Nama Usaha</label>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span>Edit Kartu:</span>
+                  <span className="font-mono text-blue-400">{editingCard.id}</span>
+                </h3>
+                <p className="text-xs text-slate-400">Atur link Google Maps atau nama usaha secara manual</p>
+              </div>
+              <button
+                onClick={() => setEditingCard(null)}
+                className="p-1 rounded-xl hover:bg-white/10 text-slate-400"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300">Nama Usaha / Toko</label>
                 <input
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-blue-500"
+                  placeholder="Contoh: Toko Kopi Nusantara"
+                  className="w-full apple-glass-input rounded-2xl px-4 py-2.5 text-xs text-white outline-none"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1">Target Link Google Review</label>
-                <textarea
-                  rows={2}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300">Target Google Review URL</label>
+                <input
+                  type="url"
                   value={editUrl}
                   onChange={(e) => setEditUrl(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-blue-500 resize-none font-mono"
+                  placeholder="https://search.google.com/local/writereview?placeid=..."
+                  className="w-full apple-glass-input rounded-2xl px-4 py-2.5 text-xs text-white outline-none"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => setEditingCard(null)}
-                className="px-3 py-2 rounded-xl text-xs text-slate-400 hover:text-white bg-slate-800"
+                className="px-4 py-2.5 rounded-2xl apple-glass hover:bg-white/10 text-xs font-medium text-slate-300"
               >
                 Batal
               </button>
@@ -552,7 +772,7 @@ export default function AdminPage() {
                 type="button"
                 disabled={savingEdit}
                 onClick={handleSaveEdit}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition disabled:opacity-50"
+                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-xs font-bold text-white shadow-lg shadow-blue-600/30 border border-white/20 disabled:opacity-50"
               >
                 {savingEdit ? 'Menyimpan...' : 'Simpan Perubahan'}
               </button>
