@@ -39,7 +39,9 @@ function PrintStickersContent() {
   const [loading, setLoading] = useState(true);
   const [downloadingZip, setDownloadingZip] = useState(false);
   const [downloadingA3, setDownloadingA3] = useState(false);
+  const [downloadingAllA3Zip, setDownloadingAllA3Zip] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [a3Progress, setA3Progress] = useState(0);
 
   // Template Choices
   const [template, setTemplate] = useState<TemplateType>(
@@ -51,6 +53,8 @@ function PrintStickersContent() {
   // Print Production Controls
   const [showCropMarks, setShowCropMarks] = useState(true);
   const [highSaturationPrint, setHighSaturationPrint] = useState(true);
+  const [fillEmptySlots, setFillEmptySlots] = useState(true);
+  const [sheetMultiplier, setSheetMultiplier] = useState(1);
   const [filterType, setFilterType] = useState<'all' | 'unassigned' | 'active'>('all');
   const [activeTab, setActiveTab] = useState<'a3_sheet' | 'single_cards'>('a3_sheet');
   const [selectedSheetIndex, setSelectedSheetIndex] = useState(0);
@@ -534,11 +538,83 @@ function PrintStickersContent() {
     });
   };
 
-  // Group active cards into sheets of 8
-  const a3Sheets: Card[][] = [];
-  for (let i = 0; i < activeCards.length; i += 8) {
-    a3Sheets.push(activeCards.slice(i, i + 8));
-  }
+  // Intelligent A3+ Sheet Grouping (Auto-fill 8 slots & multi-sheet scaling)
+  const a3Sheets: Card[][] = React.useMemo(() => {
+    if (activeCards.length === 0) return [];
+
+    // If we have 8 or more distinct cards:
+    if (activeCards.length >= 8) {
+      const sheets: Card[][] = [];
+      for (let i = 0; i < activeCards.length; i += 8) {
+        const chunk = activeCards.slice(i, i + 8);
+        if (fillEmptySlots && chunk.length < 8) {
+          const filled = [...chunk];
+          let fillIdx = 0;
+          while (filled.length < 8) {
+            filled.push(chunk[fillIdx % chunk.length]);
+            fillIdx++;
+          }
+          sheets.push(filled);
+        } else {
+          sheets.push(chunk);
+        }
+      }
+      return sheets;
+    }
+
+    // If fewer than 8 cards (e.g. 1, 2, or 4 cards):
+    // Generate `sheetMultiplier` sheets, each filled with 8 stickers!
+    const count = Math.max(1, sheetMultiplier);
+    const sheets: Card[][] = [];
+    for (let s = 0; s < count; s++) {
+      const sheet: Card[] = [];
+      let idx = 0;
+      while (sheet.length < 8) {
+        sheet.push(activeCards[idx % activeCards.length]);
+        idx++;
+      }
+      sheets.push(sheet);
+    }
+    return sheets;
+  }, [activeCards, sheetMultiplier, fillEmptySlots]);
+
+  // Handle Download ALL A3+ Sheets into a single ZIP file!
+  const handleDownloadAllA3Zip = async () => {
+    if (a3Sheets.length === 0) return;
+    setDownloadingAllA3Zip(true);
+    setA3Progress(0);
+
+    try {
+      const zip = new JSZip();
+      const folderName = `TAPLINK_A3PLUS_PRINT_BATCH_${new Date().toISOString().slice(0, 10)}`;
+      const folder = zip.folder(folderName);
+
+      for (let idx = 0; idx < a3Sheets.length; idx++) {
+        const sheetCards = a3Sheets[idx];
+        const blob = await drawA3Sheet(sheetCards);
+
+        const fileName = `TAPLINK_A3Plus_Lembar_${idx + 1}_dari_${a3Sheets.length}_(${sheetCards.length}_stiker).png`;
+        folder?.file(fileName, blob);
+
+        setA3Progress(Math.round(((idx + 1) / a3Sheets.length) * 100));
+      }
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const downloadUrl = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `${folderName}_TOTAL_${a3Sheets.length * 8}_STIKER.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      alert('Terjadi kesalahan saat mengekspor ZIP Lembar A3+');
+      console.error(err);
+    } finally {
+      setDownloadingAllA3Zip(false);
+    }
+  };
 
   // Handle Download Single A3+ Sheet
   const handleDownloadA3Sheet = async (sheetIdx: number) => {
@@ -681,23 +757,47 @@ function PrintStickersContent() {
 
             {/* Quick ZIP / A3 Download */}
             {activeTab === 'a3_sheet' ? (
-              <button
-                onClick={() => handleDownloadA3Sheet(selectedSheetIndex)}
-                disabled={downloadingA3 || activeCards.length === 0}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-lg shadow-blue-600/30 border border-white/20 transition active:scale-95 disabled:opacity-50"
-              >
-                {downloadingA3 ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Rendering A3+...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Unduh Lembar A3+ (Lembar {selectedSheetIndex + 1})</span>
-                  </>
+              <div className="flex items-center gap-2">
+                {a3Sheets.length > 1 && (
+                  <button
+                    onClick={handleDownloadAllA3Zip}
+                    disabled={downloadingAllA3Zip || a3Sheets.length === 0}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-lg shadow-blue-600/30 border border-white/20 transition active:scale-95 disabled:opacity-50"
+                    title={`Download ${a3Sheets.length} lembar A3+ sekaligus dalam 1 file ZIP`}
+                  >
+                    {downloadingAllA3Zip ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>ZIP ({a3Progress}%)...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileArchive className="w-3.5 h-3.5" />
+                        <span>Unduh Semua ({a3Sheets.length} Lembar .ZIP)</span>
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
+
+                <button
+                  onClick={() => handleDownloadA3Sheet(selectedSheetIndex)}
+                  disabled={downloadingA3 || activeCards.length === 0}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl apple-glass hover:bg-white/10 text-xs font-bold text-white border border-white/10 transition active:scale-95 disabled:opacity-50"
+                  title="Unduh lembar A3+ yang sedang ditampilkan"
+                >
+                  {downloadingA3 ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Rendering...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Lembar {selectedSheetIndex + 1} (PNG)</span>
+                    </>
+                  )}
+                </button>
+              </div>
             ) : (
               <button
                 onClick={handleDownloadZip}
@@ -767,6 +867,36 @@ function PrintStickersContent() {
                 <span>Warna Cetak Tajam (CMYK Richness)</span>
               </span>
             </label>
+
+            {/* Toggle Isi Penuh 8 Slot */}
+            <label className="flex items-center gap-2 cursor-pointer select-none text-slate-300 hover:text-white transition">
+              <input
+                type="checkbox"
+                checked={fillEmptySlots}
+                onChange={(e) => setFillEmptySlots(e.target.checked)}
+                className="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700 focus:ring-0"
+              />
+              <span className="flex items-center gap-1">
+                <Layers className="w-3 h-3 text-blue-400" />
+                <span>Penuhi 8 Slot per Lembar</span>
+              </span>
+            </label>
+
+            {/* Atur Jumlah Lembar Cetak (Repeat Multiplier) */}
+            <div className="flex items-center gap-2 text-slate-300 bg-white/5 px-2.5 py-1 rounded-xl border border-white/10">
+              <span className="text-slate-400 text-[11px]">Jumlah Lembar:</span>
+              <input
+                type="number"
+                min="1"
+                max="50"
+                value={sheetMultiplier}
+                onChange={(e) => setSheetMultiplier(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-12 apple-glass-input text-center rounded-lg py-0.5 text-xs text-white font-bold outline-none"
+              />
+              <span className="text-[11px] text-blue-400 font-semibold font-mono">
+                = {a3Sheets.length * 8} Stiker
+              </span>
+            </div>
           </div>
 
           <div className="text-[11px] text-slate-400 flex items-center gap-2 font-mono">
@@ -818,14 +948,43 @@ function PrintStickersContent() {
                   </h2>
                 </div>
 
-                <button
-                  onClick={() => handleDownloadA3Sheet(selectedSheetIndex)}
-                  disabled={downloadingA3 || !a3Sheets[selectedSheetIndex]?.length}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-xl shadow-blue-600/30 border border-white/20 transition active:scale-95 disabled:opacity-50"
-                >
-                  <Printer className="w-4 h-4" />
-                  <span>Download Lembar A3+ Siap Cetak (300 DPI)</span>
-                </button>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <button
+                    onClick={handleDownloadAllA3Zip}
+                    disabled={downloadingAllA3Zip || a3Sheets.length === 0}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-xs font-bold text-white shadow-xl shadow-blue-600/30 border border-white/20 transition active:scale-95 disabled:opacity-50"
+                  >
+                    {downloadingAllA3Zip ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Mengemas ZIP ({a3Progress}%)...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileArchive className="w-4 h-4" />
+                        <span>Unduh Semua ({a3Sheets.length} Lembar = {a3Sheets.length * 8} Stiker .ZIP)</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => handleDownloadA3Sheet(selectedSheetIndex)}
+                    disabled={downloadingA3 || !a3Sheets[selectedSheetIndex]?.length}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-2xl apple-glass hover:bg-white/10 text-xs font-semibold text-white border border-white/10 transition active:scale-95 disabled:opacity-50"
+                  >
+                    {downloadingA3 ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Merender...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Printer className="w-4 h-4 text-blue-400" />
+                        <span>Unduh Lembar {selectedSheetIndex + 1} Saja (PNG)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* 8-Card Grid in A3+ Aspect Ratio */}
