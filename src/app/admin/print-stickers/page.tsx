@@ -487,23 +487,24 @@ function PrintStickersContent() {
       ctx.lineWidth = 2.5;
 
       // Outer Corner Crop Marks for outer edges
+      const edgeMarkLen = 22;
       if (row === 0) {
-        // Top edge marks
+        // Top edge marks (8px padding from sheet top)
         ctx.beginPath();
-        ctx.moveTo(x, y - 10);
-        ctx.lineTo(x, y - 10 - markLen);
-        ctx.moveTo(x + stickerPx, y - 10);
-        ctx.lineTo(x + stickerPx, y - 10 - markLen);
+        ctx.moveTo(x, y - 6);
+        ctx.lineTo(x, y - 6 - edgeMarkLen);
+        ctx.moveTo(x + stickerPx, y - 6);
+        ctx.lineTo(x + stickerPx, y - 6 - edgeMarkLen);
         ctx.stroke();
       }
 
       if (row === 3) {
-        // Bottom edge marks
+        // Bottom edge marks (8px padding from sheet bottom)
         ctx.beginPath();
-        ctx.moveTo(x, y + stickerPx + 10);
-        ctx.lineTo(x, y + stickerPx + 10 + markLen);
-        ctx.moveTo(x + stickerPx, y + stickerPx + 10);
-        ctx.lineTo(x + stickerPx, y + stickerPx + 10 + markLen);
+        ctx.moveTo(x, y + stickerPx + 6);
+        ctx.lineTo(x, y + stickerPx + 6 + edgeMarkLen);
+        ctx.moveTo(x + stickerPx, y + stickerPx + 6);
+        ctx.lineTo(x + stickerPx, y + stickerPx + 6 + edgeMarkLen);
         ctx.stroke();
       }
 
