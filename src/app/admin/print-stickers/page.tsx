@@ -581,9 +581,9 @@ function PrintStickersContent() {
   const a3Sheets: Card[][] = React.useMemo(() => {
     if (activeCards.length === 0) return [];
 
-    // If we have 8 or more distinct cards:
+    const baseSheets: Card[][] = [];
+
     if (activeCards.length >= 8) {
-      const sheets: Card[][] = [];
       for (let i = 0; i < activeCards.length; i += 8) {
         const chunk = activeCards.slice(i, i + 8);
         if (fillEmptySlots && chunk.length < 8) {
@@ -593,28 +593,38 @@ function PrintStickersContent() {
             filled.push(chunk[fillIdx % chunk.length]);
             fillIdx++;
           }
-          sheets.push(filled);
+          baseSheets.push(filled);
         } else {
-          sheets.push(chunk);
+          baseSheets.push(chunk);
         }
       }
-      return sheets;
+    } else {
+      // Fewer than 8 cards in database
+      if (fillEmptySlots) {
+        // Fill all 8 slots by cycling through active cards so paper is not wasted
+        const sheet: Card[] = [];
+        let idx = 0;
+        while (sheet.length < 8) {
+          sheet.push(activeCards[idx % activeCards.length]);
+          idx++;
+        }
+        baseSheets.push(sheet);
+      } else {
+        // Do NOT duplicate: only include actual cards
+        baseSheets.push([...activeCards]);
+      }
     }
 
-    // If fewer than 8 cards (e.g. 1, 2, or 4 cards):
-    // Generate `sheetMultiplier` sheets, each filled with 8 stickers!
     const count = Math.max(1, sheetMultiplier);
-    const sheets: Card[][] = [];
+    if (count === 1) return baseSheets;
+
+    const result: Card[][] = [];
     for (let s = 0; s < count; s++) {
-      const sheet: Card[] = [];
-      let idx = 0;
-      while (sheet.length < 8) {
-        sheet.push(activeCards[idx % activeCards.length]);
-        idx++;
+      for (const sheet of baseSheets) {
+        result.push([...sheet]);
       }
-      sheets.push(sheet);
     }
-    return sheets;
+    return result;
   }, [activeCards, sheetMultiplier, fillEmptySlots]);
 
   // Handle Download ALL A3+ Sheets into a single ZIP file!
@@ -1038,15 +1048,41 @@ function PrintStickersContent() {
                 </div>
               ) : (
                 <div className="max-w-4xl mx-auto bg-slate-900/90 rounded-[28px] p-6 sm:p-8 border border-white/10 shadow-2xl space-y-6">
+                  {/* Auto-Fill Notice if cards are fewer than 8 */}
+                  {fillEmptySlots && activeCards.length < 8 && (
+                    <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-200 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-blue-400 shrink-0" />
+                        <span>
+                          Database memiliki <strong>{activeCards.length} kartu</strong>. Slot sisanya diisi salinan otomatis agar 1 lembar A3+ (8 stiker) terisi penuh tanpa membuang kertas.
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-400 hidden sm:inline">
+                        (Uncheck &apos;Penuhi 8 Slot&apos; jika ingin kartu asli saja)
+                      </span>
+                    </div>
+                  )}
+
                   {/* Grid 2 Columns x 4 Rows */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 justify-center">
-                    {a3Sheets[selectedSheetIndex].map((card) => {
+                    {a3Sheets[selectedSheetIndex].map((card, cardIdx) => {
+                      const isAutoFillCopy = cardIdx >= activeCards.length;
                       const previewUrl = cardRenderUrls[card.id];
                       return (
                         <div
-                          key={card.id}
-                          className="apple-glass rounded-[24px] p-3.5 border border-white/10 shadow-lg space-y-3 group hover:border-blue-500/40 transition"
+                          key={`${card.id}_slot_${cardIdx}`}
+                          className="apple-glass rounded-[24px] p-3.5 border border-white/10 shadow-lg space-y-3 group hover:border-blue-500/40 transition relative"
                         >
+                          {/* Slot Badge */}
+                          <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 px-1">
+                            <span className="font-semibold text-slate-300">Slot {cardIdx + 1} dari 8</span>
+                            {isAutoFillCopy && (
+                              <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-semibold border border-blue-500/30">
+                                Salinan Slot {(cardIdx % activeCards.length) + 1}
+                              </span>
+                            )}
+                          </div>
+
                           {/* 1:1 Actual Canvas Output Image */}
                           <div className="relative aspect-square w-full rounded-[18px] overflow-hidden bg-black/40 shadow-inner flex items-center justify-center">
                             {previewUrl ? (
