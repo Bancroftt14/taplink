@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCard, incrementTap } from '@/lib/db';
+import { NextRequest, NextResponse, after } from 'next/server';
+import { getCardForRedirect, incrementTap } from '@/lib/db';
 
 export async function GET(
   req: NextRequest,
@@ -11,7 +11,7 @@ export async function GET(
     return NextResponse.redirect(new URL('/', req.url));
   }
 
-  const card = await getCard(id);
+  const card = await getCardForRedirect(id);
 
   // If card not registered in database
   if (!card) {
@@ -31,13 +31,20 @@ export async function GET(
     return NextResponse.redirect(activateUrl);
   }
 
-  // Active card: Increment tap count asynchronously and redirect to Google Review!
-  try {
-    await incrementTap(card.id);
-  } catch (err) {
-    console.error('Failed to increment tap count:', err);
-  }
+  // Active card: Increment tap count in the background WITHOUT delaying redirect
+  after(async () => {
+    try {
+      await incrementTap(card.id);
+    } catch (err) {
+      console.error('Failed to increment tap count in background:', err);
+    }
+  });
 
-  // 302 Temporary Redirect to target Google Review URL
-  return NextResponse.redirect(card.target_url, { status: 302 });
+  // Instant HTTP 307 Temporary Redirect to target Google Review URL
+  return NextResponse.redirect(card.target_url, {
+    status: 307,
+    headers: {
+      'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+    },
+  });
 }

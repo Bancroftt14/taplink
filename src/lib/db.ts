@@ -75,6 +75,66 @@ function writeLocalCards(cards: Card[]) {
 }
 
 /**
+ * In-memory short-lived cache for ultra-fast redirects (<1ms)
+ */
+interface CacheEntry {
+  card: { id: string; status: string; target_url: string };
+  expires: number;
+}
+const redirectCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds TTL
+
+export function invalidateRedirectCache(rawId: string) {
+  redirectCache.delete(rawId.trim().toUpperCase());
+}
+
+/**
+ * Ultra-fast lookup for NFC / QR redirect (<5ms)
+ * Only selects id, status, target_url using primary key index
+ */
+export async function getCardForRedirect(
+  rawId: string
+): Promise<{ id: string; status: string; target_url: string } | null> {
+  const id = rawId.trim().toUpperCase();
+  const now = Date.now();
+
+  const cached = redirectCache.get(id);
+  if (cached && cached.expires > now) {
+    return cached.card;
+  }
+
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase
+      .from('cards')
+      .select('id, status, target_url')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error || !data) {
+      return null;
+    }
+
+    const card = {
+      id: data.id,
+      status: data.status,
+      target_url: data.target_url || '',
+    };
+    redirectCache.set(id, { card, expires: now + CACHE_TTL_MS });
+    return card;
+  }
+
+  // Local JSON fallback
+  const cards = readLocalCards();
+  const found = cards.find((c) => c.id.toUpperCase() === id);
+  if (!found) return null;
+  return {
+    id: found.id,
+    status: found.status,
+    target_url: found.target_url || '',
+  };
+}
+
+/**
  * Get card by ID (case-insensitive match)
  */
 export async function getCard(rawId: string): Promise<Card | null> {
@@ -109,6 +169,8 @@ export async function saveCard(card: Card): Promise<void> {
     id: card.id.trim().toUpperCase(),
   };
 
+  invalidateRedirectCache(normalizedCard.id);
+
   if (useSupabase && supabase) {
     const { error } = await supabase
       .from('cards')
@@ -140,6 +202,7 @@ export async function updateCard(
   updates: Partial<Card>
 ): Promise<Card | null> {
   const id = rawId.trim().toUpperCase();
+  invalidateRedirectCache(id);
 
   if (useSupabase && supabase) {
     const { data, error } = await supabase
