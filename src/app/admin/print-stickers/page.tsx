@@ -339,11 +339,14 @@ function PrintStickersContent() {
           ctx.fillText('TEMPELKAN HP KAMU', leftCenter, 1214);
           ctx.fillText('SCAN QR', rightCenter, 1214);
 
-          // Discreet Elegant Card ID Serial Code (Watermark for Identification)
+          // Discreet Elegant Card ID Serial Code (Option 2: Bancroftt • 001)
+          const serialDisplay = card.id.startsWith('TAP-')
+            ? card.id.replace(/^TAP-/i, '')
+            : card.id;
           ctx.fillStyle = '#94a3b8';
-          ctx.font = '700 24px "Product Sans", "Google Sans", -apple-system, BlinkMacSystemFont, monospace';
+          ctx.font = '600 24px "Product Sans", "Google Sans", -apple-system, BlinkMacSystemFont, sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText(card.id, half, 1250);
+          ctx.fillText(`Bancroftt • ${serialDisplay}`, half, 1250);
         }
 
         ctx.restore(); // Restore outer clip
