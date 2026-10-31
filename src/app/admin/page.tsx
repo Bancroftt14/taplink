@@ -465,9 +465,9 @@ export default function AdminPage() {
                 <button
                   type="submit"
                   disabled={generating}
-                  className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-blue-600/30 disabled:opacity-50 active:scale-95"
+                  className="w-full py-2.5 px-4 min-h-[44px] rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-blue-600/30 disabled:opacity-50 active:scale-95 apple-tap-target"
                 >
-                  {generating ? 'Membuat...' : '⚡ Generate Kartu'}
+                  {generating ? 'Membuat...' : 'Generate Kartu'}
                 </button>
               </div>
             </form>
@@ -672,12 +672,12 @@ export default function AdminPage() {
 
       {/* Floating Action Dock when Cards Selected */}
       {selectedCardIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 apple-glass-card rounded-2xl px-6 py-3 border border-blue-500/40 shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <span className="text-xs font-semibold text-white">
-            <strong className="text-blue-400">{selectedCardIds.length}</strong> kartu dipilih
+        <div className="fixed bottom-[env(safe-area-inset-bottom,1.5rem)] left-1/2 -translate-x-1/2 z-50 apple-glass-card rounded-2xl px-4 sm:px-6 py-3 border border-blue-500/40 shadow-2xl flex items-center gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-4 duration-200 max-w-[95vw] overflow-x-auto">
+          <span className="text-xs font-semibold text-white whitespace-nowrap">
+            <strong className="text-blue-400">{selectedCardIds.length}</strong> dipilih
           </span>
 
-          <div className="h-4 w-px bg-white/20" />
+          <div className="h-4 w-px bg-white/20 flex-shrink-0" />
 
           <button
             onClick={() =>
@@ -686,10 +686,10 @@ export default function AdminPage() {
                 '_blank'
               )
             }
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition active:scale-95 shadow-md shadow-blue-600/30"
+            className="flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition active:scale-95 shadow-md shadow-blue-600/30 whitespace-nowrap apple-tap-target"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Cetak Lembar A3+ (8 Kartu)</span>
+            <span>Cetak A3+ ({selectedCardIds.length})</span>
           </button>
 
           <button
@@ -700,7 +700,7 @@ export default function AdminPage() {
               navigator.clipboard.writeText(links);
               alert(`${selectedCardIds.length} Tap Link berhasil disalin!`);
             }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl apple-glass hover:bg-white/10 text-xs font-medium text-slate-300 transition"
+            className="flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl apple-glass hover:bg-white/10 text-xs font-medium text-slate-300 transition whitespace-nowrap apple-tap-target"
           >
             <Copy className="w-3.5 h-3.5" />
             <span>Salin Link</span>
@@ -708,10 +708,10 @@ export default function AdminPage() {
 
           <button
             onClick={() => setSelectedCardIds([])}
-            className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400"
+            className="p-2 rounded-xl hover:bg-white/10 text-slate-400 flex-shrink-0"
             title="Batal pilih"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}

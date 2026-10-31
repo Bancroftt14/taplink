@@ -19,11 +19,13 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col justify-between p-4 sm:p-6">
+    <div className="relative min-h-screen bg-[#05070f] text-[#f5f5f7] font-apple-display flex flex-col justify-between p-4 sm:p-6 overflow-hidden pb-[env(safe-area-inset-bottom,1.5rem)]">
+      <div className="absolute inset-0 apple-glow-mesh pointer-events-none" />
+
       {/* Top Navbar */}
-      <header className="max-w-4xl w-full mx-auto flex items-center justify-between py-4">
-        <div className="flex items-center gap-2 font-bold text-white tracking-tight">
-          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-xs text-white">
+      <header className="relative z-10 max-w-4xl w-full mx-auto flex items-center justify-between py-4">
+        <div className="flex items-center gap-2 font-semibold text-white tracking-tight">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-blue-500/20 border border-white/20">
             T
           </div>
           <span>TapLink</span>
@@ -31,27 +33,27 @@ export default function HomePage() {
 
         <Link
           href="/admin"
-          className="text-xs text-slate-500 hover:text-slate-300 transition"
+          className="text-xs text-slate-400 hover:text-white transition px-3 py-1.5 rounded-xl apple-glass border border-white/10"
         >
           Admin Portal
         </Link>
       </header>
 
       {/* Hero Center Content */}
-      <main className="max-w-md w-full mx-auto my-auto text-center space-y-6 py-10">
-        {/* Rating Stars */}
-        <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-amber-400 text-xs">
-          <Star className="w-3.5 h-3.5 fill-amber-400" />
-          <Star className="w-3.5 h-3.5 fill-amber-400" />
-          <Star className="w-3.5 h-3.5 fill-amber-400" />
-          <Star className="w-3.5 h-3.5 fill-amber-400" />
-          <Star className="w-3.5 h-3.5 fill-amber-400" />
-          <span className="text-slate-400 text-[11px] ml-1 font-sans">Google Review Card</span>
+      <main className="relative z-10 max-w-md w-full mx-auto my-auto text-center space-y-6 py-8">
+        {/* Rating Stars Pill */}
+        <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full apple-glass border border-white/10 text-amber-400 text-xs shadow-lg">
+          <div className="flex items-center gap-0.5">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+            ))}
+          </div>
+          <span className="text-slate-300 text-[11px] ml-1 font-medium">Google Review Card</span>
         </div>
 
         {/* Title */}
         <div className="space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight">
             Tingkatkan Review Bintang 5 Lewat 1 Tap
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-sm mx-auto">
@@ -60,7 +62,7 @@ export default function HomePage() {
         </div>
 
         {/* Instant Activation Box */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl text-left space-y-3">
+        <div className="apple-glass-card rounded-[28px] p-5 sm:p-6 shadow-2xl text-left space-y-3.5 border border-white/10">
           <label className="block text-xs font-semibold text-slate-300">
             Sudah Memiliki Kartu Fisik?
           </label>
@@ -70,11 +72,11 @@ export default function HomePage() {
               value={cardId}
               onChange={(e) => setCardId(e.target.value.toUpperCase())}
               placeholder="ID Kartu (misal: TAP-001)"
-              className="flex-1 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 uppercase font-mono outline-none transition"
+              className="flex-1 apple-glass-input rounded-2xl px-4 py-3 text-base sm:text-xs text-white placeholder-slate-500 uppercase font-mono outline-none transition min-h-[44px]"
             />
             <button
               type="submit"
-              className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition flex items-center gap-1.5 active:scale-[0.98]"
+              className="px-5 py-3 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 text-white font-semibold text-xs transition flex items-center gap-1.5 active:scale-95 shadow-lg shadow-blue-500/25 border border-white/20 apple-tap-target min-h-[44px]"
             >
               <span>Aktivasi</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -97,8 +99,8 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="max-w-4xl w-full mx-auto text-center py-4 text-[11px] text-slate-600">
-        © 2026 TapLink • bancrovtt.web.id
+      <footer className="relative z-10 max-w-4xl w-full mx-auto text-center py-4 text-[11px] text-slate-600">
+        TapLink by Bancroftt — Google Review Card System
       </footer>
     </div>
   );

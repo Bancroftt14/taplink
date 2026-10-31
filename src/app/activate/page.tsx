@@ -98,26 +98,26 @@ function ActivateContent() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#05070f] text-slate-100 flex flex-col justify-between overflow-hidden">
+    <div className="relative min-h-screen bg-[#05070f] text-[#f5f5f7] flex flex-col justify-between overflow-hidden font-apple-display pb-[env(safe-area-inset-bottom,1.5rem)]">
       {/* Subtle Apple Ambient Glow Field */}
       <div className="absolute inset-0 apple-glow-mesh pointer-events-none" />
       <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[550px] h-[300px] bg-blue-600/15 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute -bottom-32 right-1/4 w-[450px] h-[300px] bg-emerald-600/10 blur-[140px] rounded-full pointer-events-none" />
 
       {/* Top Header / Brand Nav */}
-      <header className="relative z-10 w-full max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+      <header className="relative z-10 w-full max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20 border border-white/20">
             <Sparkles className="w-4 h-4 text-white" />
           </div>
-          <span className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
-            TapLink <span className="text-[10px] font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded-full">Pro</span>
+          <span className="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5">
+            TapLink <span className="text-[10px] font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">Pro</span>
           </span>
         </div>
 
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span className="hidden sm:inline">Aktivasi Aman & Resmi</span>
+          <span className="hidden sm:inline font-medium">Aktivasi Aman & Resmi</span>
         </div>
       </header>
 
@@ -129,9 +129,9 @@ function ActivateContent() {
             <div className="text-center space-y-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full apple-glass text-blue-300 text-[11px] font-medium tracking-wide">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                <span>Kartu NFC & QR Review</span>
+                <span>Kartu Pintar NFC & QR</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight leading-tight">
                 Hubungkan Kartu Anda
               </h1>
               <p className="text-xs sm:text-sm text-slate-400 max-w-xs mx-auto leading-relaxed">
@@ -141,7 +141,6 @@ function ActivateContent() {
 
             {/* Apple Floating Card Miniature Preview */}
             <div className="relative mx-auto w-52 sm:w-56 aspect-square apple-glass rounded-[28px] p-4 flex flex-col justify-between items-center shadow-2xl border border-white/15 overflow-hidden group">
-              {/* Specular sheen line */}
               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.04] to-transparent pointer-events-none" />
 
               {/* Card Header */}
@@ -198,7 +197,7 @@ function ActivateContent() {
                       value={cardId}
                       onChange={(e) => setCardId(e.target.value.toUpperCase())}
                       placeholder="Contoh: TAP-001"
-                      className="w-full apple-glass-input rounded-2xl px-4 py-2.5 text-xs font-mono uppercase text-white outline-none transition"
+                      className="w-full apple-glass-input rounded-2xl px-4 py-3 text-base sm:text-xs font-mono uppercase text-white outline-none transition"
                       required
                     />
                   </div>
@@ -214,7 +213,7 @@ function ActivateContent() {
                     <button
                       type="button"
                       onClick={handlePasteClipboard}
-                      className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 transition"
+                      className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 transition px-2 py-1 rounded-lg hover:bg-white/5"
                     >
                       <ClipboardPaste className="w-3 h-3" />
                       <span>Tempel</span>
@@ -227,7 +226,7 @@ function ActivateContent() {
                       value={googleUrl}
                       onChange={(e) => setGoogleUrl(e.target.value)}
                       placeholder="https://maps.app.goo.gl/..."
-                      className="w-full apple-glass-input rounded-2xl px-4 py-3.5 pr-10 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition"
+                      className="w-full apple-glass-input rounded-2xl px-4 py-3.5 pr-10 text-base sm:text-sm text-white placeholder-slate-500 outline-none transition min-h-[48px]"
                       required
                       autoFocus
                     />
@@ -235,7 +234,7 @@ function ActivateContent() {
                   </div>
 
                   <p className="text-[11px] text-slate-400 leading-relaxed pt-0.5">
-                    💡 <strong>Cara cepat:</strong> Buka Google Maps di HP ➔ cari nama usaha Anda ➔ klik <strong>Bagikan</strong> ➔ <strong>Salin Link</strong> ➔ Tempel di sini.
+                    Petunjuk: Buka Google Maps di HP ➔ cari nama usaha Anda ➔ klik <strong>Bagikan</strong> ➔ <strong>Salin Link</strong> ➔ Tempel di formulir ini.
                   </p>
                 </div>
 
@@ -251,7 +250,7 @@ function ActivateContent() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full relative overflow-hidden py-3.5 px-4 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-semibold text-xs sm:text-sm shadow-xl shadow-blue-600/30 border border-white/20 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full relative overflow-hidden py-3.5 px-4 min-h-[48px] rounded-2xl bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-semibold text-sm shadow-xl shadow-blue-600/30 border border-white/20 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 apple-tap-target"
                 >
                   {submitting ? (
                     <>
@@ -280,12 +279,12 @@ function ActivateContent() {
               <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold text-[10px] uppercase tracking-wider">
                 Berhasil Diaktifkan
               </span>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-white">
-                Kartu Siap Digunakan! 🎉
+              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                Kartu Siap Digunakan
               </h2>
               <p className="text-xs text-slate-300">
                 Terhubung langsung ke:{' '}
-                <strong className="text-emerald-400 font-bold block text-sm mt-0.5">
+                <strong className="text-emerald-400 font-semibold block text-sm mt-0.5">
                   {businessName}
                 </strong>
               </p>
@@ -308,7 +307,7 @@ function ActivateContent() {
                 href={finalCardUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-semibold text-xs shadow-lg shadow-blue-500/25 border border-white/20 transition active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-4 min-h-[48px] rounded-2xl bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-semibold text-sm shadow-lg shadow-blue-500/25 border border-white/20 transition active:scale-[0.98] apple-tap-target"
               >
                 <span>Uji Coba Tap Sekarang</span>
                 <ExternalLink className="w-4 h-4" />
@@ -317,15 +316,15 @@ function ActivateContent() {
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl apple-glass hover:bg-white/10 text-slate-200 text-xs font-medium border border-white/10 transition active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 min-h-[48px] rounded-2xl apple-glass hover:bg-white/10 text-slate-200 text-xs sm:text-sm font-medium border border-white/10 transition active:scale-[0.98] apple-tap-target"
               >
                 <Share2 className="w-3.5 h-3.5 text-blue-400" />
-                <span>{copyFeedback ? 'Link Berhasil Disalin! ✓' : 'Salin Link Kartu'}</span>
+                <span>{copyFeedback ? 'Link Berhasil Disalin' : 'Salin Link Kartu'}</span>
               </button>
             </div>
 
             <p className="text-[11px] text-slate-400 leading-relaxed pt-1">
-              Setiap kali kartu ini di-tap atau QR di-scan, pelanggan akan langsung dibawa ke formulir ulasan bintang 5 Google Anda dalam &lt; 1 detik.
+              Setiap kali kartu ini di-tap atau QR di-scan, pelanggan akan langsung dibawa ke formulir ulasan bintang 5 Google Anda dalam waktu kurang dari 1 detik.
             </p>
           </div>
         )}
@@ -333,7 +332,7 @@ function ActivateContent() {
 
       {/* Footer */}
       <footer className="relative z-10 py-6 text-center text-xs text-slate-500">
-        TapLink by Bancroftt • Google Review Card System
+        TapLink by Bancroftt — Google Review Card System
       </footer>
     </div>
   );

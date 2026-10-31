@@ -718,28 +718,28 @@ function PrintStickersContent() {
           </div>
 
           {/* Quick Tabs: A3+ Sheet vs Satuan */}
-          <div className="flex items-center p-1 rounded-2xl bg-black/40 border border-white/10">
+          <div className="flex items-center p-1 rounded-2xl bg-black/40 border border-white/10 w-full sm:w-auto">
             <button
               onClick={() => setActiveTab('a3_sheet')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition apple-tap-target ${
                 activeTab === 'a3_sheet'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>Lembar A3+ ({a3Sheets.length} Lembar)</span>
+              <span>Lembar A3+ ({a3Sheets.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('single_cards')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition apple-tap-target ${
                 activeTab === 'single_cards'
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>Cetak Satuan ({activeCards.length} Kartu)</span>
+              <span>Cetak Satuan ({activeCards.length})</span>
             </button>
           </div>
 
@@ -749,10 +749,10 @@ function PrintStickersContent() {
             <select
               value={template}
               onChange={(e) => setTemplate(e.target.value as TemplateType)}
-              className="apple-glass-input rounded-xl px-3 py-1.5 text-xs text-white font-medium outline-none cursor-pointer border border-white/15"
+              className="apple-glass-input rounded-xl px-3 py-2 text-xs text-white font-medium outline-none cursor-pointer border border-white/15 apple-tap-target w-full sm:w-auto"
             >
-              <option value="quadrant">⭐ 4-Warna Solid Kuadran (1:1 Plakat)</option>
-              <option value="aura_blend">✨ Google Aura Wave (Gradasi Lembut)</option>
+              <option value="quadrant">Solid Kuadran (1:1 Plakat)</option>
+              <option value="aura_blend">Google Aura Wave (Gradasi)</option>
             </select>
 
             {/* Quick ZIP / A3 Download */}
@@ -1134,6 +1134,44 @@ function PrintStickersContent() {
           </div>
         )}
       </main>
+
+      {/* Mobile Bottom Sticky Bar for Instant Download */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-3 bg-[#05070f]/95 backdrop-blur-2xl border-t border-white/10 sm:hidden pb-[env(safe-area-inset-bottom,0.75rem)] shadow-2xl">
+        <div className="flex items-center gap-2">
+          {activeTab === 'a3_sheet' ? (
+            <>
+              {a3Sheets.length > 1 ? (
+                <button
+                  onClick={handleDownloadAllA3Zip}
+                  disabled={downloadingAllA3Zip}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 active:scale-95 disabled:opacity-50 min-h-[48px]"
+                >
+                  <FileArchive className="w-4 h-4" />
+                  <span>{downloadingAllA3Zip ? `ZIP (${a3Progress}%)...` : `Unduh Semua ZIP (${a3Sheets.length} Lembar)`}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleDownloadA3Sheet(selectedSheetIndex)}
+                  disabled={downloadingA3}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 active:scale-95 disabled:opacity-50 min-h-[48px]"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>{downloadingA3 ? 'Merender...' : 'Unduh Lembar A3+ (300 DPI)'}</span>
+                </button>
+              )}
+            </>
+          ) : (
+            <button
+              onClick={handleDownloadZip}
+              disabled={downloadingZip}
+              className="flex-1 py-3 px-4 rounded-2xl bg-blue-600 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 active:scale-95 disabled:opacity-50 min-h-[48px]"
+            >
+              <FileArchive className="w-4 h-4" />
+              <span>{downloadingZip ? `ZIP (${progress}%)...` : 'Unduh ZIP Semua Kartu'}</span>
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
