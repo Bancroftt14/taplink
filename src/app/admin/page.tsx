@@ -142,6 +142,52 @@ export default function AdminPage() {
     }
   };
 
+  const handleDeleteCard = async (id: string) => {
+    if (!confirm(`Hapus permanen kartu ${id}? Tindakan ini tidak dapat dibatalkan.`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/cards?key=${encodeURIComponent(adminKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id }),
+      });
+      if (res.ok) {
+        setSelectedCardIds((prev) => prev.filter((item) => item !== id));
+        fetchCards(adminKey);
+      } else {
+        alert('Gagal menghapus kartu.');
+      }
+    } catch {
+      alert('Gagal menghapus kartu.');
+    }
+  };
+
+  const handleDeleteBatch = async () => {
+    if (selectedCardIds.length === 0) return;
+    if (
+      !confirm(
+        `Hapus permanen ${selectedCardIds.length} kartu terpilih? Tindakan ini tidak dapat dibatalkan.`
+      )
+    )
+      return;
+
+    try {
+      const res = await fetch(`/api/admin/cards?key=${encodeURIComponent(adminKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_batch', ids: selectedCardIds }),
+      });
+      if (res.ok) {
+        setSelectedCardIds([]);
+        fetchCards(adminKey);
+      } else {
+        alert('Gagal menghapus batch kartu.');
+      }
+    } catch {
+      alert('Gagal menghapus batch kartu.');
+    }
+  };
+
   const handleSaveEdit = async () => {
     if (!editingCard) return;
     setSavingEdit(true);
@@ -643,7 +689,7 @@ export default function AdminPage() {
                                 setEditName(card.business_name || '');
                                 setEditUrl(card.target_url || '');
                               }}
-                              className="p-1.5 rounded-lg apple-glass hover:bg-white/10 text-slate-300"
+                              className="p-1.5 rounded-lg apple-glass hover:bg-white/10 text-slate-300 transition"
                               title="Edit Data"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -652,12 +698,20 @@ export default function AdminPage() {
                             {card.status === 'active' && (
                               <button
                                 onClick={() => handleResetCard(card.id)}
-                                className="p-1.5 rounded-lg apple-glass hover:bg-rose-500/20 text-rose-400"
-                                title="Reset Kartu"
+                                className="p-1.5 rounded-lg apple-glass hover:bg-amber-500/20 text-amber-400 transition"
+                                title="Reset Kartu ke Belum Aktif"
                               >
                                 <RotateCcw className="w-3.5 h-3.5" />
                               </button>
                             )}
+
+                            <button
+                              onClick={() => handleDeleteCard(card.id)}
+                              className="p-1.5 rounded-lg apple-glass hover:bg-rose-500/20 text-rose-400 transition"
+                              title="Hapus Kartu Permanen"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -704,6 +758,15 @@ export default function AdminPage() {
           >
             <Copy className="w-3.5 h-3.5" />
             <span>Salin Link</span>
+          </button>
+
+          <button
+            onClick={handleDeleteBatch}
+            className="flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl apple-glass hover:bg-rose-500/20 text-xs font-bold text-rose-400 border border-rose-500/25 transition active:scale-95 whitespace-nowrap apple-tap-target"
+            title="Hapus permanen kartu terpilih"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Hapus ({selectedCardIds.length})</span>
           </button>
 
           <button

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { listAllCards, createBatchCards, updateCard, getCard, saveCard } from '@/lib/db';
+import { listAllCards, createBatchCards, updateCard, getCard, saveCard, deleteCard, deleteBatchCards } from '@/lib/db';
 import { Card } from '@/types/card';
 import { resolveGoogleUrl } from '@/lib/google-url';
 
@@ -134,6 +134,26 @@ export async function POST(req: NextRequest) {
       });
 
       return NextResponse.json({ success: true, card: updated });
+    }
+
+    // Action 5: Delete single card
+    if (action === 'delete') {
+      const { id } = body;
+      if (!id) return NextResponse.json({ error: 'ID wajib diisi' }, { status: 400 });
+
+      await deleteCard(id);
+      return NextResponse.json({ success: true, deletedId: id });
+    }
+
+    // Action 6: Delete batch cards
+    if (action === 'delete_batch') {
+      const { ids } = body;
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return NextResponse.json({ error: 'Daftar ID wajib diisi' }, { status: 400 });
+      }
+
+      const count = await deleteBatchCards(ids);
+      return NextResponse.json({ success: true, deletedCount: count });
     }
 
     return NextResponse.json({ error: 'Aksi tidak dikenal' }, { status: 400 });

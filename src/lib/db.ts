@@ -230,6 +230,51 @@ export async function updateCard(
 }
 
 /**
+ * Delete card by ID
+ */
+export async function deleteCard(rawId: string): Promise<boolean> {
+  const id = rawId.trim().toUpperCase();
+  invalidateRedirectCache(id);
+
+  if (useSupabase && supabase) {
+    const { error } = await supabase.from('cards').delete().eq('id', id);
+    if (error) {
+      console.error('Supabase deleteCard error:', error);
+      throw error;
+    }
+    return true;
+  }
+
+  const cards = readLocalCards();
+  const filtered = cards.filter((c) => c.id.toUpperCase() !== id);
+  writeLocalCards(filtered);
+  return true;
+}
+
+/**
+ * Delete batch cards by IDs
+ */
+export async function deleteBatchCards(ids: string[]): Promise<number> {
+  const normalized = ids.map((id) => id.trim().toUpperCase());
+  normalized.forEach((id) => invalidateRedirectCache(id));
+
+  if (useSupabase && supabase) {
+    const { error } = await supabase.from('cards').delete().in('id', normalized);
+    if (error) {
+      console.error('Supabase deleteBatchCards error:', error);
+      throw error;
+    }
+    return normalized.length;
+  }
+
+  const cards = readLocalCards();
+  const idSet = new Set(normalized);
+  const filtered = cards.filter((c) => !idSet.has(c.id.toUpperCase()));
+  writeLocalCards(filtered);
+  return normalized.length;
+}
+
+/**
  * Increment tap count for card
  */
 export async function incrementTap(rawId: string): Promise<void> {
