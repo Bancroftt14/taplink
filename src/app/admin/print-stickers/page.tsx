@@ -338,6 +338,12 @@ function PrintStickersContent() {
           ctx.font = '700 32px "Product Sans", "Google Sans", -apple-system, BlinkMacSystemFont, sans-serif';
           ctx.fillText('TEMPELKAN HP KAMU', leftCenter, 1214);
           ctx.fillText('SCAN QR', rightCenter, 1214);
+
+          // Discreet Elegant Card ID Serial Code (Watermark for Identification)
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '700 24px "Product Sans", "Google Sans", -apple-system, BlinkMacSystemFont, monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(card.id, half, 1250);
         }
 
         ctx.restore(); // Restore outer clip
