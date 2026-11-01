@@ -273,7 +273,9 @@ function ActivateContent() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const displayId = (cardId || initialId || '').trim().toUpperCase();
+  const rawId = (cardId || initialId || '').trim().toUpperCase();
+  const serialOnly = rawId.replace(/^TAP-/i, '');
+  const displayBadge = serialOnly ? `BANCROFTT • ${serialOnly}` : 'BANCROFTT';
 
   return (
     <div className="min-h-screen bg-[#07090e] text-[#f4f5f7] flex flex-col justify-center items-center px-4 py-8 selection:bg-white selection:text-slate-900">
@@ -282,30 +284,32 @@ function ActivateContent() {
         <div className="bg-[#0f121a] border border-white/[0.08] rounded-2xl p-6 sm:p-7 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.85)] relative">
           {/* Subtle Top Metadata Header */}
           <div className="flex items-center justify-between pb-3.5 mb-5 border-b border-white/[0.06]">
-            <span className="text-[10px] uppercase font-mono tracking-[0.24em] text-slate-500 font-medium">
-              Bancroftt • TapLink
-            </span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span className="text-[10px] uppercase font-mono tracking-[0.2em] text-slate-400 font-medium">
+                Smart Plaque
+              </span>
+            </div>
 
-            {/* Micro ID Badge tucked cleanly in the corner */}
+            {/* Micro ID Badge matching the physical card */}
             {initialId && !isEditingId ? (
               <button
                 type="button"
                 onClick={() => setIsEditingId(true)}
-                className="group flex items-center gap-1.5 text-[11px] font-mono text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] px-2.5 py-1 rounded-md border border-white/[0.06] transition"
+                className="group flex items-center gap-1.5 text-[11px] font-mono text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] px-2.5 py-1 rounded-md border border-white/[0.06] transition"
                 title="Klik untuk ubah ID jika perlu"
               >
-                <span className="text-slate-500 group-hover:text-slate-400">ID</span>
-                <span className="font-semibold text-slate-200">{displayId}</span>
+                <span className="font-semibold text-slate-200">{displayBadge}</span>
               </button>
             ) : (
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-mono text-slate-500">ID:</span>
+                <span className="text-[10px] font-mono text-slate-500">No:</span>
                 <input
                   type="text"
                   value={cardId}
                   onChange={(e) => setCardId(e.target.value.toUpperCase())}
-                  placeholder="TAP-001"
-                  className="w-24 px-2 py-0.5 rounded bg-black/50 border border-white/15 text-[11px] font-mono text-white uppercase outline-none focus:border-white/40 transition"
+                  placeholder="001"
+                  className="w-20 px-2 py-0.5 rounded bg-black/50 border border-white/15 text-[11px] font-mono text-white uppercase outline-none focus:border-white/40 transition"
                   required
                 />
               </div>
@@ -314,28 +318,22 @@ function ActivateContent() {
 
           {!isActivated ? (
             <div className="space-y-6">
-              {/* Title & Subtitle with Luxury Typography */}
-              <div className="space-y-1.5">
-                {fontMode === 'editorial' ? (
-                  <h1 className="font-serif text-[25px] sm:text-[27px] font-normal text-white tracking-[-0.015em] leading-[1.25]">
-                    Hubungkan ke <span className="italic font-normal text-slate-200">Google Maps</span>
-                  </h1>
-                ) : (
-                  <h1 className="font-sans text-[22px] sm:text-[24px] font-semibold text-white tracking-[-0.03em] leading-snug">
-                    Hubungkan ke Google Maps
-                  </h1>
-                )}
+              {/* Title & Subtitle */}
+              <div className="space-y-1">
+                <h1 className="text-[22px] sm:text-[23px] font-semibold text-white tracking-[-0.03em] leading-snug">
+                  Activate Google Review
+                </h1>
                 <p className="text-[13px] text-slate-400 font-normal leading-relaxed">
-                  Cari nama toko, kafe, atau bisnis Anda di Indonesia, atau tempel langsung tautan Google Maps.
+                  Hubungkan kartu ini ke Google Maps Anda.
                 </p>
               </div>
 
               <form onSubmit={handleActivate} className="space-y-4 pt-1">
-                {/* 1. Google Maps Search & Link Input (First & Primary) */}
+                {/* 1. Google Maps Search & Link Input */}
                 <div className="space-y-1.5 relative" ref={dropdownRef}>
                   <div className="flex items-center justify-between">
                     <label className="text-[12px] font-medium text-slate-300 tracking-[-0.01em] flex items-center gap-1.5">
-                      <span>Cari Tempat (Indonesia) / Tautan</span>
+                      <span>Cari Tempat / Tautan</span>
                       {validating && <RefreshCw className="w-3 h-3 animate-spin text-slate-400" />}
                     </label>
 
@@ -388,10 +386,10 @@ function ActivateContent() {
                           setShowDropdown(true);
                         }
                       }}
-                      placeholder="Cari nama bisnis di Indonesia atau tempel link..."
+                      placeholder="Cari nama bisnis atau tempel link..."
                       className={`w-full pl-9 pr-9 py-2.5 rounded-xl text-[13px] text-white placeholder-slate-600 outline-none transition ${
                         isValidUrl
-                          ? 'bg-emerald-950/20 border border-emerald-500/70 focus:border-emerald-400 ring-1 ring-emerald-500/30 shadow-[0_0_15px_-4px_rgba(16,185,129,0.25)]'
+                          ? 'bg-emerald-950/20 border border-emerald-500/70 focus:border-emerald-400 ring-1 ring-emerald-500/30'
                           : 'bg-[#090b10] border border-white/[0.1] focus:border-white/30 focus:ring-1 focus:ring-white/20'
                       }`}
                       required
@@ -407,15 +405,12 @@ function ActivateContent() {
 
                   {/* Valid Green Confirmation Pill */}
                   {isValidUrl && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium animate-in fade-in duration-150">
                       <Check className="w-3.5 h-3.5 shrink-0" />
                       <div className="flex-1 truncate">
-                        <span className="font-semibold text-emerald-300">Tautan Terverifikasi</span>
-                        {verifiedName && (
-                          <span className="text-emerald-400/90 block text-[11px] truncate mt-0.5">
-                            {verifiedName}
-                          </span>
-                        )}
+                        <span className="font-semibold text-emerald-300">
+                          {verifiedName || 'Tautan Terverifikasi'}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -425,7 +420,7 @@ function ActivateContent() {
                     <div className="absolute top-full left-0 right-0 z-30 mt-1.5 bg-[#121520] border border-white/[0.12] rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
                       {searching ? (
                         <div className="p-3.5 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
                           <span>Mencari lokasi di Indonesia...</span>
                         </div>
                       ) : searchResults.length > 0 ? (
@@ -481,23 +476,14 @@ function ActivateContent() {
                       )}
                     </div>
                   )}
-
-                  <p className="text-[11px] text-slate-500 leading-normal">
-                    Pencarian otomatis dioptimalkan untuk seluruh kota dan daerah di Indonesia.
-                  </p>
                 </div>
 
-                {/* 2. PIN Input (Second, only if card requires PIN) */}
+                {/* 2. PIN Input */}
                 {requiresPin && (
                   <div className="space-y-1.5 pt-1">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[12px] font-medium text-slate-300 tracking-[-0.01em]">
-                        PIN Keamanan
-                      </label>
-                      <span className="text-[10px] font-mono text-amber-400/90 tracking-wide uppercase">
-                        Wajib
-                      </span>
-                    </div>
+                    <label className="text-[12px] font-medium text-slate-300 tracking-[-0.01em]">
+                      PIN
+                    </label>
                     <input
                       type="password"
                       inputMode="numeric"
@@ -508,9 +494,6 @@ function ActivateContent() {
                       className="w-full px-3.5 py-2.5 rounded-xl bg-[#090b10] border border-white/[0.1] text-sm text-white placeholder-slate-600 font-mono tracking-[0.25em] outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 transition"
                       required
                     />
-                    <p className="text-[11px] text-slate-500 leading-normal">
-                      PIN tertera pada kartu atau diberikan oleh penyedia kartu.
-                    </p>
                   </div>
                 )}
 
@@ -522,12 +505,12 @@ function ActivateContent() {
                   </div>
                 )}
 
-                {/* Luxurious High-Contrast Submit Button */}
+                {/* Submit Button */}
                 <div className="pt-2">
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-950 text-[13px] font-semibold transition active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                    className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-950 text-xs font-semibold transition active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
                   >
                     {submitting ? (
                       <>
@@ -535,7 +518,7 @@ function ActivateContent() {
                         <span>Menghubungkan...</span>
                       </>
                     ) : (
-                      <span>Aktifkan Kartu Sekarang</span>
+                      <span>Aktifkan Kartu</span>
                     )}
                   </button>
                 </div>
@@ -549,9 +532,9 @@ function ActivateContent() {
               </div>
 
               <div className="space-y-1">
-                <p className="text-base font-medium text-white tracking-[-0.02em]">{businessName}</p>
-                <p className="text-[11px] text-slate-500 font-mono tracking-wider">
-                  Kartu {displayId} berhasil dihubungkan
+                <p className="text-base font-semibold text-white tracking-[-0.02em]">{businessName}</p>
+                <p className="text-xs text-slate-400">
+                  {displayBadge} • Terhubung ke Google Review
                 </p>
               </div>
 
@@ -582,37 +565,9 @@ function ActivateContent() {
           )}
         </div>
 
-        {/* Subtle Typography Style Selector */}
-        <div className="flex items-center justify-center gap-2 pt-1 text-[11px] text-slate-500 font-sans">
-          <span>Gaya Font:</span>
-          <button
-            type="button"
-            onClick={() => setFontMode('editorial')}
-            className={`px-2 py-0.5 rounded transition ${
-              fontMode === 'editorial'
-                ? 'bg-white/10 text-slate-200 font-medium'
-                : 'text-slate-500 hover:text-slate-400'
-            }`}
-          >
-            Editorial Serif
-          </button>
-          <span>•</span>
-          <button
-            type="button"
-            onClick={() => setFontMode('modern')}
-            className={`px-2 py-0.5 rounded transition ${
-              fontMode === 'modern'
-                ? 'bg-white/10 text-slate-200 font-medium'
-                : 'text-slate-500 hover:text-slate-400'
-            }`}
-          >
-            Modern Luxury Sans
-          </button>
-        </div>
-
         {/* Minimal Editorial Footer */}
         <p className="text-center text-[10px] text-slate-600 font-mono tracking-wider uppercase">
-          TapLink by Bancroftt ID
+          Bancroftt
         </p>
       </div>
     </div>

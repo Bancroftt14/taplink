@@ -96,9 +96,10 @@ export async function getCardForRedirect(
   rawId: string
 ): Promise<{ id: string; status: string; target_url: string } | null> {
   const id = rawId.trim().toUpperCase();
+  const altId = id.startsWith('TAP-') ? id.replace(/^TAP-/i, '') : `TAP-${id}`;
   const now = Date.now();
 
-  const cached = redirectCache.get(id);
+  const cached = redirectCache.get(id) || redirectCache.get(altId);
   if (cached && cached.expires > now) {
     return cached.card;
   }
@@ -107,7 +108,8 @@ export async function getCardForRedirect(
     const { data, error } = await supabase
       .from('cards')
       .select('id, status, target_url')
-      .eq('id', id)
+      .or(`id.ilike.${id},id.ilike.${altId}`)
+      .limit(1)
       .maybeSingle();
 
     if (error || !data) {
@@ -120,12 +122,13 @@ export async function getCardForRedirect(
       target_url: data.target_url || '',
     };
     redirectCache.set(id, { card, expires: now + CACHE_TTL_MS });
+    redirectCache.set(altId, { card, expires: now + CACHE_TTL_MS });
     return card;
   }
 
   // Local JSON fallback
   const cards = readLocalCards();
-  const found = cards.find((c) => c.id.toUpperCase() === id);
+  const found = cards.find((c) => c.id.toUpperCase() === id || c.id.toUpperCase() === altId);
   if (!found) return null;
   return {
     id: found.id,
@@ -135,16 +138,18 @@ export async function getCardForRedirect(
 }
 
 /**
- * Get card by ID (case-insensitive match)
+ * Get card by ID (case-insensitive match, supports both 001 and TAP-001)
  */
 export async function getCard(rawId: string): Promise<Card | null> {
   const id = rawId.trim().toUpperCase();
+  const altId = id.startsWith('TAP-') ? id.replace(/^TAP-/i, '') : `TAP-${id}`;
 
   if (useSupabase && supabase) {
     const { data, error } = await supabase
       .from('cards')
       .select('*')
-      .ilike('id', id)
+      .or(`id.ilike.${id},id.ilike.${altId}`)
+      .limit(1)
       .maybeSingle();
 
     if (error) {
@@ -156,7 +161,7 @@ export async function getCard(rawId: string): Promise<Card | null> {
 
   // Local JSON fallback
   const cards = readLocalCards();
-  const found = cards.find((c) => c.id.toUpperCase() === id);
+  const found = cards.find((c) => c.id.toUpperCase() === id || c.id.toUpperCase() === altId);
   return found || null;
 }
 
