@@ -326,7 +326,7 @@ function ActivateContent() {
                   </h1>
                 )}
                 <p className="text-[13px] text-slate-400 font-normal leading-relaxed">
-                  Cari nama tempat usaha Anda atau tempel link ulasan Google Maps langsung.
+                  Cari nama toko, kafe, atau bisnis Anda di Indonesia, atau tempel langsung tautan Google Maps.
                 </p>
               </div>
 
@@ -335,7 +335,7 @@ function ActivateContent() {
                 <div className="space-y-1.5 relative" ref={dropdownRef}>
                   <div className="flex items-center justify-between">
                     <label className="text-[12px] font-medium text-slate-300 tracking-[-0.01em] flex items-center gap-1.5">
-                      <span>Cari Tempat / Tautan</span>
+                      <span>Cari Tempat (Indonesia) / Tautan</span>
                       {validating && <RefreshCw className="w-3 h-3 animate-spin text-slate-400" />}
                     </label>
 
@@ -374,7 +374,7 @@ function ActivateContent() {
                           setShowDropdown(true);
                         }
                       }}
-                      placeholder="Ketik nama bisnis atau tempel link maps..."
+                      placeholder="Cari nama bisnis di Indonesia atau tempel link..."
                       className={`w-full pl-9 pr-9 py-2.5 rounded-xl text-[13px] text-white placeholder-slate-600 outline-none transition ${
                         isValidUrl
                           ? 'bg-emerald-950/20 border border-emerald-500/70 focus:border-emerald-400 ring-1 ring-emerald-500/30 shadow-[0_0_15px_-4px_rgba(16,185,129,0.25)]'
@@ -412,12 +412,13 @@ function ActivateContent() {
                       {searching ? (
                         <div className="p-3.5 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
                           <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-400" />
-                          <span>Mencari tempat Google Maps...</span>
+                          <span>Mencari lokasi di Indonesia...</span>
                         </div>
                       ) : searchResults.length > 0 ? (
                         <div className="divide-y divide-white/[0.05]">
-                          <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-500 bg-black/30">
-                            Pilih Tempat Usaha
+                          <div className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-500 bg-black/30 flex items-center justify-between">
+                            <span>Pilih Tempat Usaha</span>
+                            <span className="text-[9px] text-emerald-400/80 font-sans">Indonesia</span>
                           </div>
                           {searchResults.map((place, idx) => (
                             <button
@@ -440,14 +441,14 @@ function ActivateContent() {
                         </div>
                       ) : (
                         <div className="p-3.5 text-center text-xs text-slate-500">
-                          Tidak ada tempat ditemukan. Silakan tempel link langsung dari Google Maps.
+                          Tidak ada tempat ditemukan di Indonesia. Silakan tempel link langsung dari Google Maps.
                         </div>
                       )}
                     </div>
                   )}
 
                   <p className="text-[11px] text-slate-500 leading-normal">
-                    Ketik nama bisnis Anda untuk mencari otomatis, atau tempel link dari aplikasi Google Maps.
+                    Pencarian otomatis dioptimalkan untuk seluruh kota dan daerah di Indonesia.
                   </p>
                 </div>
 

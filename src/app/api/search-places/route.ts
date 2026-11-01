@@ -7,6 +7,9 @@ interface PlaceResult {
   mapsUrl: string;
 }
 
+// Bounding box of Republic of Indonesia (Sabang to Merauke, Miangas to Rote)
+const INDONESIA_BBOX = '95.0,-11.0,141.0,6.0';
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const query = (searchParams.get('q') || '').trim();
@@ -16,16 +19,27 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // 1. Primary fast POI search via Photon (Komoot OSM)
-    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=6`;
+    // 1. Primary fast POI search via Photon (Komoot OSM) strictly bounded to Indonesia
+    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(
+      query
+    )}&bbox=${INDONESIA_BBOX}&lat=-6.2088&lon=106.8456&limit=8`;
+
     const res = await fetch(photonUrl, {
-      headers: { 'User-Agent': 'TapLink-Search/1.0' },
+      headers: { 'User-Agent': 'TapLink-Search-ID/1.0' },
       next: { revalidate: 60 },
     });
 
     if (res.ok) {
       const data = await res.json();
-      const features = data.features || [];
+      const features = (data.features || []).filter((f: any) => {
+        const country = (f.properties?.country || '').toLowerCase();
+        const countryCode = (f.properties?.countrycode || '').toLowerCase();
+        return (
+          country === 'indonesia' ||
+          countryCode === 'id' ||
+          !country // bounded by Indonesia bbox
+        );
+      });
 
       if (features.length > 0) {
         const results: PlaceResult[] = features.map((f: any) => {
@@ -35,7 +49,7 @@ export async function GET(req: NextRequest) {
             p.street,
             p.locality || p.district || p.city,
             p.state,
-            p.country,
+            p.country || 'Indonesia',
           ].filter(Boolean);
           const address = addressParts.join(', ');
 
@@ -43,12 +57,12 @@ export async function GET(req: NextRequest) {
             .filter(Boolean)
             .join(', ');
           const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            fullQuery
+            `${name}, ${address}`
           )}`;
 
           return {
             name,
-            address: address || 'Lokasi terdaftar',
+            address: address || 'Indonesia',
             fullText: fullQuery,
             mapsUrl,
           };
@@ -58,28 +72,29 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 2. Fallback to OpenStreetMap Nominatim if Photon yields no results
+    // 2. Fallback to OpenStreetMap Nominatim with strict countrycodes=id
     const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
       query
-    )}&format=json&limit=5`;
+    )}&format=json&countrycodes=id&limit=6`;
+
     const nomRes = await fetch(nominatimUrl, {
-      headers: { 'User-Agent': 'TapLink-Search/1.0' },
+      headers: { 'User-Agent': 'TapLink-Search-ID/1.0' },
     });
 
     if (nomRes.ok) {
       const nomData = await nomRes.json();
       const results: PlaceResult[] = (nomData || []).map((item: any) => {
         const name = item.name || item.display_name.split(',')[0];
-        const address = item.display_name.split(',').slice(1, 4).join(',').trim();
-        const fullQuery = `${name}, ${address}`;
+        const addressParts = item.display_name.split(',').slice(1, 4).map((s: string) => s.trim());
+        const address = addressParts.join(', ');
         const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-          fullQuery
+          `${name}, ${address}`
         )}`;
 
         return {
           name,
           address: address || item.display_name,
-          fullText: fullQuery,
+          fullText: `${name}, ${address}`,
           mapsUrl,
         };
       });
