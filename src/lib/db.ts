@@ -315,22 +315,36 @@ export async function incrementTap(rawId: string): Promise<void> {
  * List all cards (for admin)
  */
 export async function listAllCards(): Promise<Card[]> {
+  let list: Card[] = [];
+
   if (useSupabase && supabase) {
     const { data, error } = await supabase
       .from('cards')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('id', { ascending: true });
 
     if (error) {
       console.error('Supabase listAllCards error:', error);
       return [];
     }
-    return (data as Card[]) || [];
+    list = (data as Card[]) || [];
+  } else {
+    list = readLocalCards();
   }
 
-  // Local JSON fallback
-  const cards = readLocalCards();
-  return cards.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  // Natural numeric sort: TAP-001, TAP-002, ..., TAP-080, TAP-DEMO
+  return list.sort((a, b) => {
+    const matchA = a.id.match(/\d+/);
+    const matchB = b.id.match(/\d+/);
+    if (matchA && matchB) {
+      const numA = parseInt(matchA[0], 10);
+      const numB = parseInt(matchB[0], 10);
+      if (numA !== numB) return numA - numB;
+    }
+    if (matchA && !matchB) return -1;
+    if (!matchA && matchB) return 1;
+    return a.id.localeCompare(b.id, undefined, { numeric: true });
+  });
 }
 
 /**

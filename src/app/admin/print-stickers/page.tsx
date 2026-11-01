@@ -47,7 +47,7 @@ function PrintStickersContent() {
   const [highSaturationPrint, setHighSaturationPrint] = useState(true);
   const [fillEmptySlots, setFillEmptySlots] = useState(true);
   const [sheetMultiplier, setSheetMultiplier] = useState(1);
-  const [filterType, setFilterType] = useState<'all' | 'unassigned' | 'active'>('all');
+  const [filterType, setFilterType] = useState<'serial' | 'all' | 'unassigned' | 'active'>('serial');
   const [activeTab, setActiveTab] = useState<'a3_sheet' | 'single_cards'>('a3_sheet');
   const [selectedSheetIndex, setSelectedSheetIndex] = useState(0);
 
@@ -78,11 +78,31 @@ function PrintStickersContent() {
     loadCards();
   }, [key]);
 
-  const activeCards = cards.filter((c) => {
-    if (filterType === 'unassigned') return c.status === 'unassigned';
-    if (filterType === 'active') return c.status === 'active';
-    return true;
-  });
+  // Naturally sorted and filtered cards (e.g. 001 s/d 080)
+  const activeCards = React.useMemo(() => {
+    const list = cards.filter((c) => {
+      if (filterType === 'serial') {
+        // Serial numbered cards only (e.g. TAP-001 s/d TAP-080)
+        return Boolean(c.id.match(/\d+/));
+      }
+      if (filterType === 'unassigned') return c.status === 'unassigned';
+      if (filterType === 'active') return c.status === 'active';
+      return true;
+    });
+
+    return list.sort((a, b) => {
+      const matchA = a.id.match(/\d+/);
+      const matchB = b.id.match(/\d+/);
+      if (matchA && matchB) {
+        const numA = parseInt(matchA[0], 10);
+        const numB = parseInt(matchB[0], 10);
+        if (numA !== numB) return numA - numB;
+      }
+      if (matchA && !matchB) return -1;
+      if (!matchA && matchB) return 1;
+      return a.id.localeCompare(b.id, undefined, { numeric: true });
+    });
+  }, [cards, filterType]);
 
   // Generate QR Code data URLs
   useEffect(() => {
@@ -439,7 +459,11 @@ function PrintStickersContent() {
   ]);
 
   // Master Drawer for Full A3+ Sheet (329 x 486 mm @ 300 DPI = 3886 x 5740 px, 8 Cards Grid)
-  const drawA3Sheet = async (sheetCards: Card[]): Promise<Blob> => {
+  const drawA3Sheet = async (
+    sheetCards: Card[],
+    sheetIndex: number = 0,
+    totalSheets: number = 1
+  ): Promise<Blob> => {
     const canvas = hiddenA3CanvasRef.current;
     if (!canvas) throw new Error('A3 Canvas unavailable');
 
@@ -464,7 +488,11 @@ function PrintStickersContent() {
     const startX = Math.round((sheetW - totalGridW) / 2);
     const startY = Math.round((sheetH - totalGridH) / 2);
 
-    // Left Margin Technical Metadata
+    // Left Margin Technical Metadata with exact card numbers!
+    const firstSerial = sheetCards[0]?.id.replace(/^TAP-/i, '') || '';
+    const lastSerial = sheetCards[sheetCards.length - 1]?.id.replace(/^TAP-/i, '') || '';
+    const rangeText = firstSerial && lastSerial ? ` • STIKER NO. ${firstSerial} S/D ${lastSerial}` : '';
+
     ctx.save();
     ctx.translate(70, sheetH / 2);
     ctx.rotate(-Math.PI / 2);
@@ -472,7 +500,7 @@ function PrintStickersContent() {
     ctx.font = '700 26px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(
-      'TAPLINK PRODUCTION PRINT SHEET • FORMAT A3+ (329 x 486 mm) • 300 DPI • 8 STIKER (12 x 12 cm R7mm)',
+      `TAPLINK PRODUCTION PRINT SHEET • FORMAT A3+ (329 x 486 mm) • 300 DPI • LEMBAR ${sheetIndex + 1}/${totalSheets}${rangeText}`,
       0,
       0
     );
@@ -666,9 +694,13 @@ function PrintStickersContent() {
 
       for (let idx = 0; idx < a3Sheets.length; idx++) {
         const sheetCards = a3Sheets[idx];
-        const blob = await drawA3Sheet(sheetCards);
+        const blob = await drawA3Sheet(sheetCards, idx, a3Sheets.length);
 
-        const fileName = `TAPLINK_A3Plus_Lembar_${idx + 1}_dari_${a3Sheets.length}_(${sheetCards.length}_stiker).png`;
+        const firstSerial = sheetCards[0]?.id.replace(/^TAP-/i, '') || '';
+        const lastSerial = sheetCards[sheetCards.length - 1]?.id.replace(/^TAP-/i, '') || '';
+        const rangePart = firstSerial && lastSerial ? `_(Stiker_${firstSerial}_sd_${lastSerial})` : '';
+
+        const fileName = `TAPLINK_A3Plus_Lembar_${String(idx + 1).padStart(2, '0')}_dari_${String(a3Sheets.length).padStart(2, '0')}${rangePart}.png`;
         folder?.file(fileName, blob);
 
         setA3Progress(Math.round(((idx + 1) / a3Sheets.length) * 100));
@@ -696,13 +728,17 @@ function PrintStickersContent() {
     const sheetCards = a3Sheets[sheetIdx];
     if (!sheetCards || sheetCards.length === 0) return;
 
+    const firstSerial = sheetCards[0]?.id.replace(/^TAP-/i, '') || '';
+    const lastSerial = sheetCards[sheetCards.length - 1]?.id.replace(/^TAP-/i, '') || '';
+    const rangePart = firstSerial && lastSerial ? `_Stiker_${firstSerial}_sd_${lastSerial}` : '';
+
     setDownloadingA3(true);
     try {
-      const blob = await drawA3Sheet(sheetCards);
+      const blob = await drawA3Sheet(sheetCards, sheetIdx, a3Sheets.length);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `TAPLINK_LEMBAR_A3PLUS_SHEET_${sheetIdx + 1}_${new Date().toISOString().slice(0, 10)}.png`;
+      a.download = `TAPLINK_A3PLUS_LEMBAR_${String(sheetIdx + 1).padStart(2, '0')}_DARI_${String(a3Sheets.length).padStart(2, '0')}${rangePart}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -951,12 +987,16 @@ function PrintStickersContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap items-center gap-3 text-xs">
             {/* Filter by Status */}
             <div className="flex items-center gap-2">
-              <span className="text-slate-500 text-[11px] whitespace-nowrap">Status:</span>
+              <span className="text-slate-500 text-[11px] whitespace-nowrap">Filter:</span>
               <select
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value as any)}
+                onChange={(e) => {
+                  setFilterType(e.target.value as any);
+                  setSelectedSheetIndex(0);
+                }}
                 className="w-full sm:w-auto bg-[#090b10] border border-white/[0.1] rounded-xl px-2.5 py-1.5 text-xs text-white outline-none focus:border-white/30 transition cursor-pointer"
               >
+                <option value="serial">Seri Cetak (001 - 080)</option>
                 <option value="all">Semua ({cards.length})</option>
                 <option value="unassigned">Belum Aktif</option>
                 <option value="active">Sudah Aktif</option>
@@ -1049,19 +1089,24 @@ function PrintStickersContent() {
                 <span className="text-[11px] text-slate-500 uppercase tracking-wider font-mono mr-1 flex-shrink-0">
                   Lembar:
                 </span>
-                {a3Sheets.map((sheet, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedSheetIndex(idx)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex-shrink-0 ${
-                      selectedSheetIndex === idx
-                        ? 'bg-white text-slate-950 font-semibold shadow-sm'
-                        : 'bg-[#0f121a] text-slate-400 hover:text-white border border-white/[0.08]'
-                    }`}
-                  >
-                    Lembar {idx + 1} ({sheet.length})
-                  </button>
-                ))}
+                {a3Sheets.map((sheet, idx) => {
+                  const firstId = sheet[0]?.id.replace(/^TAP-/i, '') || '';
+                  const lastId = sheet[sheet.length - 1]?.id.replace(/^TAP-/i, '') || '';
+                  const rangeLabel = firstId && lastId ? ` (${firstId} - ${lastId})` : ` (${sheet.length})`;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedSheetIndex(idx)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex-shrink-0 ${
+                        selectedSheetIndex === idx
+                          ? 'bg-white text-slate-950 font-semibold shadow-sm'
+                          : 'bg-[#0f121a] text-slate-400 hover:text-white border border-white/[0.08]'
+                      }`}
+                    >
+                      Lembar {idx + 1}{rangeLabel}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
@@ -1070,10 +1115,15 @@ function PrintStickersContent() {
               {/* Sheet Header Info Bar */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
                 <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-semibold text-white">
                       Lembar {selectedSheetIndex + 1} dari {a3Sheets.length}
                     </span>
+                    {a3Sheets[selectedSheetIndex]?.[0] && (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/[0.06] text-slate-300 border border-white/[0.08]">
+                        Stiker No. {a3Sheets[selectedSheetIndex][0].id.replace(/^TAP-/i, '')} s/d {a3Sheets[selectedSheetIndex][a3Sheets[selectedSheetIndex].length - 1].id.replace(/^TAP-/i, '')}
+                      </span>
+                    )}
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/[0.04] text-slate-400 border border-white/[0.06]">
                       A3+ (329 × 483 mm)
                     </span>
@@ -1130,14 +1180,17 @@ function PrintStickersContent() {
                     {a3Sheets[selectedSheetIndex].map((card, cardIdx) => {
                       const isAutoFillCopy = cardIdx >= activeCards.length;
                       const previewUrl = cardRenderUrls[card.id];
+                      const serialDisplay = card.id.startsWith('TAP-') ? card.id.replace(/^TAP-/i, '') : card.id;
                       return (
                         <div
                           key={`${card.id}_slot_${cardIdx}`}
                           className="bg-[#090b10] rounded-xl p-2.5 sm:p-3 border border-white/[0.08] space-y-2 hover:border-white/20 transition group"
                         >
                           {/* Slot Badge */}
-                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500">
-                            <span>Slot {cardIdx + 1} / 8</span>
+                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                            <span className="font-semibold text-slate-300">
+                              Slot {cardIdx + 1} • {serialDisplay}
+                            </span>
                             {isAutoFillCopy && (
                               <span className="px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 text-[9px] border border-blue-500/25">
                                 Salinan Slot {(cardIdx % activeCards.length) + 1}
@@ -1164,7 +1217,7 @@ function PrintStickersContent() {
                           {/* Card Meta Tag */}
                           <div className="flex items-center justify-between text-xs pt-0.5">
                             <span className="font-mono font-semibold text-white text-[11px]">
-                              {card.id}
+                              BANCROFTT • {serialDisplay}
                             </span>
                             <span className="text-slate-400 text-[10px] truncate max-w-[110px] sm:max-w-[140px]">
                               {card.business_name || 'Belum Ditautkan'}
@@ -1199,7 +1252,7 @@ function PrintStickersContent() {
                     {/* Header info */}
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-mono font-semibold text-white text-sm">
-                        {card.id}
+                        {card.id.startsWith('TAP-') ? `BANCROFTT • ${card.id.replace(/^TAP-/i, '')}` : card.id}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
