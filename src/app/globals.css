@@ -36,10 +36,10 @@
 }
 
 body {
-  background: #05070f;
-  color: #f5f5f7;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", var(--font-geist-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  letter-spacing: -0.014em;
+  background: #07090e;
+  color: #f4f5f7;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
