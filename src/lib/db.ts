@@ -108,7 +108,7 @@ export async function getCardForRedirect(
     const { data, error } = await supabase
       .from('cards')
       .select('id, status, target_url')
-      .or(`id.ilike.${id},id.ilike.${altId}`)
+      .in('id', [id, altId, id.toLowerCase(), altId.toLowerCase()])
       .limit(1)
       .maybeSingle();
 
@@ -138,7 +138,7 @@ export async function getCardForRedirect(
 }
 
 /**
- * Get card by ID (case-insensitive match, supports both 001 and TAP-001)
+ * Get card by ID (supports both 001 and TAP-001)
  */
 export async function getCard(rawId: string): Promise<Card | null> {
   const id = rawId.trim().toUpperCase();
@@ -148,7 +148,7 @@ export async function getCard(rawId: string): Promise<Card | null> {
     const { data, error } = await supabase
       .from('cards')
       .select('*')
-      .or(`id.ilike.${id},id.ilike.${altId}`)
+      .in('id', [id, altId, id.toLowerCase(), altId.toLowerCase()])
       .limit(1)
       .maybeSingle();
 
