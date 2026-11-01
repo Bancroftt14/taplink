@@ -15,6 +15,7 @@ import {
   ClipboardPaste,
   ShieldCheck,
   Star,
+  KeyRound,
 } from 'lucide-react';
 
 function ActivateContent() {
@@ -23,6 +24,9 @@ function ActivateContent() {
 
   const [cardId, setCardId] = useState(initialId);
   const [googleUrl, setGoogleUrl] = useState('');
+  const [pin, setPin] = useState('');
+  const [requiresPin, setRequiresPin] = useState(false);
+  const [checkingCard, setCheckingCard] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -37,6 +41,35 @@ function ActivateContent() {
       setCardId(initialId);
     }
   }, [initialId]);
+
+  // Check if card requires a security PIN
+  useEffect(() => {
+    const currentId = (cardId || initialId || '').trim().toUpperCase();
+    if (!currentId) return;
+
+    let isMounted = true;
+    async function checkCard() {
+      setCheckingCard(true);
+      try {
+        const res = await fetch(`/api/card-info?id=${encodeURIComponent(currentId)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setRequiresPin(Boolean(data.requires_pin));
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (isMounted) setCheckingCard(false);
+      }
+    }
+    checkCard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cardId, initialId]);
 
   const handlePasteClipboard = async () => {
     try {
@@ -63,6 +96,11 @@ function ActivateContent() {
       return;
     }
 
+    if (requiresPin && !pin.trim()) {
+      setErrorMessage('Kartu ini dilindungi PIN. Silakan masukkan kode PIN aktivasi.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const res = await fetch('/api/activate', {
@@ -71,6 +109,7 @@ function ActivateContent() {
         body: JSON.stringify({
           cardId: cardId.trim().toUpperCase(),
           url: googleUrl.trim(),
+          pin: pin.trim(),
         }),
       });
 
@@ -148,10 +187,17 @@ function ActivateContent() {
                 <span className="font-mono font-bold tracking-wider text-blue-400">
                   {cardId || 'TAP-001'}
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 font-semibold text-[9px] flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-emerald-400" />
-                  Siap Aktif
-                </span>
+                {requiresPin ? (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-400 font-semibold text-[9px] flex items-center gap-1">
+                    <KeyRound className="w-2.5 h-2.5" />
+                    Perlu PIN
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 font-semibold text-[9px] flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                    Siap Aktif
+                  </span>
+                )}
               </div>
 
               {/* Miniature Center Google Branding */}
@@ -200,6 +246,36 @@ function ActivateContent() {
                       className="w-full apple-glass-input rounded-2xl px-4 py-3 text-base sm:text-xs font-mono uppercase text-white outline-none transition"
                       required
                     />
+                  </div>
+                )}
+
+                {/* Security PIN Input (Conditional when card is protected by PIN) */}
+                {requiresPin && (
+                  <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Kode PIN Pengaman</span>
+                      </span>
+                      <span className="text-[10px] text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/25 font-semibold">
+                        Wajib Diisi
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="password"
+                        inputMode="numeric"
+                        value={pin}
+                        onChange={(e) => setPin(e.target.value)}
+                        placeholder="Masukkan kode PIN aktivasi"
+                        className="w-full apple-glass-input rounded-2xl px-4 py-3.5 text-base sm:text-sm text-white placeholder-slate-500 outline-none transition tracking-widest font-mono min-h-[48px]"
+                        required
+                      />
+                      <ShieldCheck className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-400/60 pointer-events-none" />
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Kartu ini dilindungi PIN. Masukkan kode PIN yang diberikan saat pembelian.
+                    </p>
                   </div>
                 )}
 

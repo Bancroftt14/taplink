@@ -22,11 +22,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify PIN only if the card has a non-empty PIN assigned and client submitted pin
+    // Verify PIN strictly if the card has a non-empty PIN assigned
     if (card.pin && card.pin.trim() !== '') {
-      if (pin && pin.trim() !== card.pin.trim()) {
+      if (!pin || pin.trim() !== card.pin.trim()) {
         return NextResponse.json(
-          { error: 'Kode PIN aktivasi salah.' },
+          { error: 'Kode PIN aktivasi salah atau belum diisi.' },
           { status: 403 }
         );
       }
