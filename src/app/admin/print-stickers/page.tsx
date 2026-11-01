@@ -3,22 +3,16 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
-  Printer,
   ArrowLeft,
   RefreshCw,
   FileArchive,
-  Star,
-  Info,
-  Sparkles,
   Download,
   Layers,
-  Sliders,
-  CheckCircle2,
-  Copy,
-  ExternalLink,
   Scissors,
   Palette,
   Eye,
+  Printer,
+  Copy,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import JSZip from 'jszip';
@@ -762,16 +756,15 @@ function PrintStickersContent() {
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-blue-400" />
-                  <span>Studio Cetak Plakat & Stiker</span>
+                <h1 className="text-sm sm:text-base font-semibold text-white tracking-tight">
+                  Studio Cetak Stiker A3+
                 </h1>
-                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono text-[10px] font-bold">
-                  A3+ 300 DPI
+                <span className="px-2 py-0.5 rounded-full bg-white/[0.06] text-slate-400 font-mono text-[10px]">
+                  300 DPI
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 hidden sm:block">
-                Ukuran 120 x 120 mm (R7mm) • 1 Lembar A3+ Isi 8 Stiker Pas Presisi
+                Ukuran 120 × 120 mm (R7mm) • 8 stiker per lembar A3+ (3886 × 5740 px)
               </p>
             </div>
           </div>
@@ -958,9 +951,8 @@ function PrintStickersContent() {
             </div>
           </div>
 
-          <div className="text-[11px] text-slate-400 flex items-center gap-2 font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>100% WYSIWYG • Pixel-Perfect Canvas</span>
+          <div className="text-[11px] text-slate-500 font-mono">
+            3886 × 5740 px
           </div>
         </div>
 
