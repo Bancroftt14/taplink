@@ -5,10 +5,8 @@ interface PlaceResult {
   address: string;
   fullText: string;
   mapsUrl: string;
+  placeId?: string;
 }
-
-// Bounding box of Republic of Indonesia (Sabang to Merauke, Miangas to Rote)
-const INDONESIA_BBOX = '95.0,-11.0,141.0,6.0';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -18,93 +16,80 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
-  try {
-    // 1. Primary fast POI search via Photon (Komoot OSM) strictly bounded to Indonesia
-    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(
-      query
-    )}&bbox=${INDONESIA_BBOX}&lat=-6.2088&lon=106.8456&limit=8`;
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
-    const res = await fetch(photonUrl, {
-      headers: { 'User-Agent': 'TapLink-Search-ID/1.0' },
-      next: { revalidate: 60 },
+  // 1. If Google Maps API Key is configured, use official Google Places API
+  if (apiKey) {
+    try {
+      const googleUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
+        query
+      )}&region=id&language=id&key=${apiKey}`;
+
+      const res = await fetch(googleUrl);
+      if (res.ok) {
+        const data = await res.json();
+        const results: PlaceResult[] = (data.results || []).slice(0, 6).map((item: any) => {
+          const placeId = item.place_id;
+          const reviewUrl = placeId
+            ? `https://search.google.com/local/writereview?placeid=${placeId}`
+            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                `${item.name}, ${item.formatted_address}`
+              )}`;
+
+          return {
+            name: item.name,
+            address: item.formatted_address || 'Indonesia',
+            fullText: `${item.name}, ${item.formatted_address}`,
+            mapsUrl: reviewUrl,
+            placeId,
+          };
+        });
+
+        return NextResponse.json({ results, provider: 'google_places_official' });
+      }
+    } catch (err) {
+      console.error('Google Places official API error:', err);
+    }
+  }
+
+  // 2. Fallback: Google Search Suggestions for Indonesia
+  try {
+    const suggestUrl = `https://suggestqueries.google.com/complete/search?client=chrome&hl=id&gl=id&q=${encodeURIComponent(
+      query
+    )}`;
+
+    const res = await fetch(suggestUrl, {
+      headers: {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
     });
 
     if (res.ok) {
       const data = await res.json();
-      const features = (data.features || []).filter((f: any) => {
-        const country = (f.properties?.country || '').toLowerCase();
-        const countryCode = (f.properties?.countrycode || '').toLowerCase();
-        return (
-          country === 'indonesia' ||
-          countryCode === 'id' ||
-          !country // bounded by Indonesia bbox
-        );
-      });
+      const suggestions: string[] = (data[1] || []).slice(0, 5);
 
-      if (features.length > 0) {
-        const results: PlaceResult[] = features.map((f: any) => {
-          const p = f.properties || {};
-          const name = p.name || p.street || query;
-          const addressParts = [
-            p.street,
-            p.locality || p.district || p.city,
-            p.state,
-            p.country || 'Indonesia',
-          ].filter(Boolean);
-          const address = addressParts.join(', ');
-
-          const fullQuery = [name, addressParts.slice(0, 2).join(', ')]
-            .filter(Boolean)
-            .join(', ');
-          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            `${name}, ${address}`
-          )}`;
-
-          return {
-            name,
-            address: address || 'Indonesia',
-            fullText: fullQuery,
-            mapsUrl,
-          };
-        });
-
-        return NextResponse.json({ results });
-      }
-    }
-
-    // 2. Fallback to OpenStreetMap Nominatim with strict countrycodes=id
-    const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-      query
-    )}&format=json&countrycodes=id&limit=6`;
-
-    const nomRes = await fetch(nominatimUrl, {
-      headers: { 'User-Agent': 'TapLink-Search-ID/1.0' },
-    });
-
-    if (nomRes.ok) {
-      const nomData = await nomRes.json();
-      const results: PlaceResult[] = (nomData || []).map((item: any) => {
-        const name = item.name || item.display_name.split(',')[0];
-        const addressParts = item.display_name.split(',').slice(1, 4).map((s: string) => s.trim());
-        const address = addressParts.join(', ');
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-          `${name}, ${address}`
-        )}`;
+      const results: PlaceResult[] = suggestions.map((s) => {
+        const cleanName = s.replace(/\b\w/g, (l) => l.toUpperCase());
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s)}`;
 
         return {
-          name,
-          address: address || item.display_name,
-          fullText: `${name}, ${address}`,
+          name: cleanName,
+          address: 'Cari langsung di Google Maps Indonesia',
+          fullText: s,
           mapsUrl,
         };
       });
 
-      return NextResponse.json({ results });
+      return NextResponse.json({
+        results,
+        provider: 'google_suggestions',
+        hasApiKey: Boolean(apiKey),
+      });
     }
-
-    return NextResponse.json({ results: [] });
   } catch (err) {
-    console.error('Place search error:', err);
-    return NextResponse.json({ results: [] });
+    console.error('Suggest fallback error:', err);
   }
+
+  return NextResponse.json({ results: [], hasApiKey: Boolean(apiKey) });
 }

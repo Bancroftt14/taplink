@@ -340,6 +340,20 @@ function ActivateContent() {
                     </label>
 
                     <div className="flex items-center gap-1.5">
+                      <a
+                        href={
+                          googleUrl.trim()
+                            ? `https://www.google.com/maps/search/${encodeURIComponent(googleUrl.trim())}`
+                            : 'https://maps.google.com'
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-medium text-slate-400 hover:text-white transition px-2 py-0.5 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] flex items-center gap-1"
+                        title="Buka Google Maps langsung di browser/aplikasi"
+                      >
+                        <span>Buka Maps</span>
+                        <ExternalLink className="w-2.5 h-2.5 text-slate-500" />
+                      </a>
                       {googleUrl && (
                         <button
                           type="button"
@@ -352,7 +366,7 @@ function ActivateContent() {
                       <button
                         type="button"
                         onClick={handlePaste}
-                        className="text-[11px] font-medium text-slate-400 hover:text-white transition px-2 py-0.5 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06]"
+                        className="text-[11px] font-medium text-slate-200 hover:text-white transition px-2 py-0.5 rounded bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.1]"
                       >
                         Tempel
                       </button>
@@ -438,10 +452,31 @@ function ActivateContent() {
                               </div>
                             </button>
                           ))}
+
+                          <a
+                            href={`https://www.google.com/maps/search/${encodeURIComponent(googleUrl.trim())}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-full p-2.5 text-center text-[11px] font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/15 flex items-center justify-center gap-1.5 transition"
+                          >
+                            <span>Buka pencarian lengkap di Google Maps</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
                         </div>
                       ) : (
-                        <div className="p-3.5 text-center text-xs text-slate-500">
-                          Tidak ada tempat ditemukan di Indonesia. Silakan tempel link langsung dari Google Maps.
+                        <div className="p-3.5 text-center space-y-2">
+                          <p className="text-xs text-slate-400">
+                            Ingin mencari langsung di Google Maps?
+                          </p>
+                          <a
+                            href={`https://www.google.com/maps/search/${encodeURIComponent(googleUrl.trim())}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 text-xs font-medium hover:bg-emerald-500/20 transition"
+                          >
+                            <span>Buka &quot;{googleUrl}&quot; di Google Maps</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
                         </div>
                       )}
                     </div>
